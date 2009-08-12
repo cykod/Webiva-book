@@ -1,0 +1,7 @@
+<div class='cms_form'>
+<%  paragraph_options_form_for :content do |f| -%>
+ <%= f.select :book_id, [['--Use Page Connection--',0]] + BookBook.select_options, :vertical => true %> 
+ <%= f.radio_buttons :show_first_page, [['Yes',true],['No',false]], :label => 'First First Page by Default', :vertical => true %> 
+ 
+<% end -%>
+</div>

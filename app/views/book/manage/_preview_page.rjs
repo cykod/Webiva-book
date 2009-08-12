@@ -1,0 +1,13 @@
+
+
+  
+  page <<  "$('preview_iframe').contentWindow.document.open()"
+  txt = ''
+  txt = '<style>' + SiteTemplate.render_template_css(@book.style_template_id,Locale.language_code.downcase) + "</style>\n\n" if @book.style_template
+  txt << @book.preview_wrapper_start unless @book.preview_wrapper.blank?
+  txt << @page.body_html
+  txt << @book.preview_wrapper_end unless @book.preview_wrapper.blank?
+  page.call "$('preview_iframe').contentWindow.document.write", txt 
+  page <<  "$('preview_iframe').contentWindow.document.close()"
+
+  page.show 'element_preview'

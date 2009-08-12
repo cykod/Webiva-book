@@ -1,0 +1,4 @@
+
+
+
+page.replace_html :search_content, :partial => 'search'

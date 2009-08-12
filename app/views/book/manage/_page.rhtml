@@ -1,0 +1,42 @@
+
+<% ajax_tabs ['Edit',['Preview',"ChapterTree.previewPage(#{@page.id});"]],'Edit' do |t| -%>
+
+<% t.tab do -%>
+<% if @updated -%>
+  <div id='flash_notice' class='flash_notice'>
+    <%= "Page Saved".t %> 
+
+  </div>
+  <script>
+    ChapterTree.updateTitle(<%= @page.id %>,"<%= jh(render(:partial => 'chapter', :locals => { :chapter => @page })) %>");
+  </script>
+<% end -%>
+
+<% cms_form_for :page, @page,  :html => { :class => 'admin_form full_page_form', :onsubmit => "ChapterTree.editPage(#{@page.id},Form.serialize(this)); return false;", :width => '100%;', :id => 'page_form' }  do |f| -%>
+ <%= f.text_field :name, :vertical => true %> 
+ <%= f.check_boxes :published, [['Published',true]], :single => true,:label => '', :vertical => true %> 
+ 
+ <%= f.text_area :body, :rows => 30, :style => 'width:100%', :vertical => true %> 
+ <%= f.text_area :description, :rows => 3, :style => 'width:100%', :vertical => true, :label => 'Optional Description' %> 
+ 
+ <%= f.submit_tag 'Save' %> 
+ 
+<% end -%>
+
+
+<script>
+  ChapterTree.selectPage(<%= @page.id  %>);
+                          
+</script>
+
+<% end -%>
+
+<% t.tab do -%>
+  <div id='element_preview' style=' border:1px solid #CCCCCC; padding:10px;'>
+   <iframe id='preview_iframe' width='100%' style='height:400px; border:0px;'></iframe>
+  </div>
+
+<% end -%>
+
+  
+<% end -%>

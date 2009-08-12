@@ -1,0 +1,36 @@
+<div class='admin_content'>
+<% admin_form_for :book, @book do |f| -%>
+
+<%= f.text_field :name, :label => 'Book Name', :required => true %> 
+<%= f.text_area :description, :rows => 4 %> 
+<%= f.filemanager_image :cover_file_id %> 
+<%= f.filemanager_image :thumb_file_id %> 
+
+<%= f.header 'Options' %> 
+
+<%= f.radio_buttons :book_type, BookBook.book_type_select_options %> 
+
+<% if @book.id -%>
+   <%= f.label_field :url_scheme_display, :label => 'URL Scheme',:description => 'Cannot be modified' %>
+   
+<% else -%>
+   <%= f.radio_buttons :url_scheme, BookBook.url_scheme_select_options, :description => 'Cannot be changed once selected' %> 
+  
+<% end -%>
+
+<%= f.select :content_filter, ContentFilter.filter_options %>
+<%= f.filemanager_folder :image_folder_id %> 
+<%= f.select :style_template_id, [['--Please select a style--',nil]] + SiteTemplate.site_template_options, :description => 'Used to correctly preview pages in the page editor' %>
+<%= f.text_field :preview_wrapper, :description => 'ID or Class name to wrap previewed content\nUse #div_id or .div_class_name to specify the id or the CSS class' %> 
+
+
+
+<%= f.spacer %> 
+
+<%= f.cancel_submit_buttons 'Cancel','Submit' %> 
+
+<% end -%>
+
+
+
+</div>

@@ -1,0 +1,6 @@
+
+page.replace_html :tree_content, :text => active_tree(:chapter, @chapters, :javascript => 'ChapterTree', :children => :child_cache)
+
+page.replace_html :element_info, :partial => 'page'
+
+page << '$("page_name").focus(); $("page_name").select();'

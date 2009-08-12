@@ -1,0 +1,14 @@
+
+<a href='javascript:void(0);' onclick='ChapterTree.clearSearch();'>Clear Search</a><br/><br/>
+<% if @pages.length > 0 -%>
+  
+<% @pages.each do |page| -%>
+
+
+<a href='javascript:void(0);' onclick='ChapterTree.select(<%= page.id %> );'><%= page.name %></a><br/>
+<% end -%>
+
+<% else -%>
+ No Results
+  
+<% end -%>
