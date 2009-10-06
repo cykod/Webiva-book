@@ -16,27 +16,36 @@ class Book::PageRenderer < ParagraphRenderer
     @book = find_book 
     return render_paragraph :text => '' unless @book
 
+    page_conn_type,page_url = page_connection(:flat_chapter)
+    
     @chapters = @book.nested_pages
 
-    @menu = build_chapter_data(@chapters,@options.levels-1,@options.root_page_url + '/')
-    
+    @menu, selected = build_chapter_data(@chapters,@options.levels-1,@options.root_page_url.to_s + '/',page_url.to_s)
+
     render_paragraph :text => menu_feature()
   end
 
-  def build_chapter_data(chapters,level,path = '')
-    chapters.map do |chapter|
+  def build_chapter_data(chapters,level,path = '',current_path='')
+     chapter_selected = nil
+     chaps = chapters.map do |chapter|
       if chapter.published?
         url =  ( path + chapter.url.to_s)
+        menu, selected = (level > 0) ? build_chapter_data(chapter.child_cache,level-1,path,current_path) : [ nil, nil ]
+        if !selected
+          selected = chapter.url.to_s != '' && chapter.url.to_s == current_path
+        end
+        chapter_selected ||= selected
         {
           :title => chapter.name,
           :link => url,
-          :menu => (level > 0) ? build_chapter_data(chapter.child_cache,level-1,path) : nil,
-          :selected => false
+          :menu => menu,
+          :selected => selected
         }
       else
         nil
       end
     end.compact
+    [ chaps, chapter_selected ]
   end
 
   
@@ -54,7 +63,7 @@ class Book::PageRenderer < ParagraphRenderer
       if @options.show_first_page && page_url.blank?
         @page = @book.root_node.children[0]
       else
-        @page = @book.book_pages.find_by_url_and_published(page_url,true)
+        @page = @book.book_pages.find_by_url_and_published(page_url,true,:conditions => 'parent_id IS NOT NULL')
       end
     else
       raise 'Unsupported...'

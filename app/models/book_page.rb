@@ -29,7 +29,7 @@ class BookPage < DomainModel
   end
 
   def parent_page
-     (self.parent.parent_id ? self.parent : nil)
+     ((self.parent && self.parent.parent_id) ? self.parent : nil)
   end
 
   def next_page
@@ -50,8 +50,8 @@ class BookPage < DomainModel
 
   # Go to previous page or up
   def back_page
-    @back_page ||=  BookPage.find(:first,:conditions => ['lft < ?',self.lft ],:order => 'lft DESC') || :none
-    @back_page = :none if !@back_page.parent_id
+    @back_page ||=  BookPage.find(:first,:conditions => ['lft < ?',self.lft ],:order => 'lft DESC')
+    @back_page = :none if !@back_page ||  !@back_page.parent_id
     @back_page == :none ? nil : @back_page
   end
   

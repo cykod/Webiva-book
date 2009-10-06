@@ -2,7 +2,7 @@
 <%  paragraph_options_form_for :chapters do |f| -%>
   <%= f.select :book_id, [['--Use Page Connection--',0]] + BookBook.select_options %> 
   <%= f.select :levels, (1..10).to_a %>
-  <%= f.page_selector :roo %> 
+  <%= f.page_selector :root_page_id %> 
   
 <% end -%>
 </div>

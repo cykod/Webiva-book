@@ -24,7 +24,7 @@ class Book::AdminController < ModuleController
 
   def self.get_books_info
       info = BookBook.find(:all, :order => 'name').collect do |book| 
-          {:name => book.name,:url => { :controller => '/book/manage', :action => 'edit', :path => book.id } ,:permission => 'book_manage', :icon => 'icons/content/blog.gif' }
+          {:name => book.name,:url => { :controller => '/book/manage', :action => 'edit', :path => book.id } ,:permission => :book_manage, :icon => 'icons/content/blog.gif' }
       end 
       info
   end
@@ -35,7 +35,7 @@ class Book::AdminController < ModuleController
     
     @options = self.class.module_options(params[:options])
     
-    if request.post? && params[:options] && @options.valid?
+    if request.post? && @options.valid?
       Configuration.set_config_model(@options)
       flash[:notice] = "Updated Book module options".t 
       redirect_to :controller => '/modules'
