@@ -10,7 +10,11 @@ class BookPage < DomainModel
 
   validates_presence_of :book_book
 
-  apply_content_filter(:body => :body_html)  { |page| page.book_book.content_filter } 
+  apply_content_filter(:body => :body_html)  do |page|
+    { :filter => page.book_book.content_filter,
+      :folder_id => page.book_book.image_folder_id
+    }
+  end
 
   before_update :create_url
   after_move :path_update
