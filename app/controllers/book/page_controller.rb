@@ -14,7 +14,7 @@ class Book::PageController < ParagraphController
     :flat_chapter => [ [:chapter_id,' Chapter URL',:path ]]
   }
 
-  class ChapterOptions < HashModel
+  class ChaptersOptions < HashModel
     attributes :book_id => 0, :levels => 0, :root_page_id => nil
 
     validates_presence_of :root_page_id
