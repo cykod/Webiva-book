@@ -20,7 +20,7 @@ class BookBook < DomainModel
 
   validates_presence_of :name
   validates_format_of :preview_wrapper, :allow_blank => true, :with => /^(\.|\#)/
-  attr_protected :url_scheme, :except => :create
+  attr_protected :url_scheme, :book_type, :except => :create
 
   content_node_type :book, "BookPage", :content_name => :name,:title_field => :name
 

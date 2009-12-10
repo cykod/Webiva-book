@@ -105,6 +105,14 @@
           
           },
 
+          deletePage: function(page_id) {
+            Element.hide('element_delete');
+            var params = Form.serialize('page_form');
+            params +=  "&page_id=" + page_id;
+            new Ajax.Request('<%= url_for :action => 'delete_page', :path => [ @book.id ] %>',
+             { parameters: params, evalScripts: true } );
+          
+          },
           updateTitle: function(page_id,title) {
             var elem = $('chapter_' + page_id).down('.active_tree_leaf_content');
             elem.innerHTML = title;

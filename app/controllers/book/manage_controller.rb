@@ -12,6 +12,7 @@ class Book::ManageController < ModuleController
     @book = BookBook.find_by_id(params[:path][0]) || BookBook.new
 
     cms_page_path ['Content'], @book.id ? [ "Configure %s",nil,@book.name ] : 'Create a book'
+    cms_page_info [ ["Content",url_for(:controller => '/content') ], "Create a new Book"], "content"
 
     if request.post? && params[:book]
       if params[:commit]
@@ -110,12 +111,36 @@ class Book::ManageController < ModuleController
     render :partial => 'preview_page'
   end
 
+  def delete_page
+    
+    @book = BookBook.find(params[:path][0])
+
+    @page = @book.book_pages.find(params[:page_id])
+    @page.attributes = params[:page]
+
+    if request.post? && params[:destroy] == 'yes'
+      @page.destroy
+    end
+  end
+
+
   def search
      @book =  BookBook.find(params[:path][0])
 
      @pages = @book.book_pages.find(:all,:conditions => [ 'name LIKE ?',"%#{params[:search]}%" ],:order => 'name')
   end
   
+  def delete
+    @book =  BookBook.find(params[:path][0])
+    cms_page_path ['Content'],['Delete %s',nil,@book.name ]
+
+    if request.post? && params[:destroy] == 'yes'
+      @book.destroy
+
+      redirect_to :controller => '/content', :action => 'index'
+    end
+    
+  end
   
   protected
 
