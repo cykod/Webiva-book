@@ -8,15 +8,20 @@ class Book::ManageController < ModuleController
 
   helper :active_tree
 
+
   def book
     @book = BookBook.find_by_id(params[:path][0]) || BookBook.new
 
     cms_page_path ['Content'], @book.id ? [ "Configure %s",nil,@book.name ] : 'Create a book'
-    cms_page_info [ ["Content",url_for(:controller => '/content') ], "Create a new Book"], "content"
 
     if request.post? && params[:book]
       if params[:commit]
         @new_book = @book.id ? false : true
+        if @new_book 
+          @book.book_type = params[:book][:book_type]
+          @book.url_scheme = params[:book][:url_scheme]
+        end
+
         if @book.update_attributes(params[:book])
           redirect_to :action => 'edit', :path => @book.id
         end
@@ -34,30 +39,33 @@ class Book::ManageController < ModuleController
 
   def edit
     @book = BookBook.find(params[:path][0])
-
-    @chapters = @book.nested_pages
-
-    if @chapters.length == 0
-      @page = @book.book_pages.create(:name => 'Default Page',:created_by_id => myself.id)
-      @page.move_to_child_of(@book.root_node)
-      @book.reload
       @chapters = @book.nested_pages
-    end
-
-    
-
+      
+      
+      
+      if @chapters.length == 0 && @book.book_type == 'chapter'
+        @page = @book.book_pages.create(:name => 'Default Page',:created_by_id => myself.id)
+        @page.move_to_child_of(@book.root_node)
+        @book.reload
+        @chapters = @book.nested_pages
+      end
+          
     cms_page_path ['Content'], [ 'Edit %s',nil,@book.name ]
 
     require_js('scriptaculous-sortabletree/sortable_tree.js')
     
   end
-
+  
+  
+  
   def update_tree
     @book = BookBook.find(params[:path][0])
 
     # return the page and the destination page
+ 
     active_tree_move(params[:chapter_tree]) do |page_id,move_page_id|
       [ @book.book_pages.find(page_id), move_page_id ?  @book.book_pages.find(move_page_id) : @book.root_node ]
+    
     end
   
     render :nothing => true
@@ -89,16 +97,27 @@ class Book::ManageController < ModuleController
 
     @page = @book.book_pages.find_by_id(params[:page_id]) || @book.book_pages.build(:created_by_id => myself.id)
 
-    if request.post? && params[:page]
-      @page.updated_by_id = myself.id
-      if @page.save_content(myself,params[:page])
-        @updated=true;
-      end
-    end
-
+    # @page = params[:page_id] ? @book.book_pages.find(params[:page_id]) : @book.book_pages.build(:created_by_id => myself.id)
     render :partial => 'page'
   end
 
+  def save_page
+    @book =  BookBook.find(params[:path][0])
+    
+    @page = @book.book_pages.find_by_id(params[:page_id]) || @book.book_pages.build(:created_by_id => myself.id)
+    @page.updated_by_id = myself.id
+    @new_page = true unless @page.id
+    
+
+    if @page.save_content(myself,params[:page])
+      @updated=true;
+      @chapters = @book.nested_pages
+    end
+   
+ 
+    @save_error = params[:save_error]
+  end
+    
   def preview_page
 
     @book =  BookBook.find(params[:path][0])
@@ -114,15 +133,11 @@ class Book::ManageController < ModuleController
   def delete_page
     
     @book = BookBook.find(params[:path][0])
-
     @page = @book.book_pages.find(params[:page_id])
-    @page.attributes = params[:page]
-
-    if request.post? && params[:destroy] == 'yes'
-      @page.destroy
-    end
+    @page.destroy if @page
+    @deleted=true
   end
-
+  
 
   def search
      @book =  BookBook.find(params[:path][0])
@@ -141,7 +156,7 @@ class Book::ManageController < ModuleController
     end
     
   end
-  
+
   protected
 
   def active_tree_move(pages)
@@ -168,5 +183,7 @@ class Book::ManageController < ModuleController
       end
     end
   end
+
+  
 
 end

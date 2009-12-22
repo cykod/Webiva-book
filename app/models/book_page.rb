@@ -16,9 +16,9 @@ class BookPage < DomainModel
     }
   end
 
-  before_update :create_url
+  before_save :create_url
   after_move :path_update
-  after_save :force_resave_children
+  after_save :force_resave_children, :path_update
 
   content_node :container_type => 'BookBook', :container_field => 'book_book_id',
   :except => Proc.new { |pg| pg.parent_id }, :published => :published
@@ -79,7 +79,7 @@ class BookPage < DomainModel
       end
     end
 
-    if self.parent_id
+    if self.parent_id || self.book_book.book_type == 'flat'
       path_update(true)
     end
   

@@ -5,7 +5,13 @@
 <% end -%>
 
 <hr/>
+<% if @book.book_type == 'flat'%>
+<% action_panel do |p| -%>
+  <%= p.link 'Add Page', {:url => 'javascript:void(0);', :icon => 'add.gif'}, :onclick => 'ChapterTree.select("");' %> 
+   
+<% end -%>
 
+<% else %>
 <div class='admin_content'>
 <div class='add_node_group'>
 
@@ -17,8 +23,9 @@
   </div>
 </div>
 </div>
-
+<% end %>
 <hr/>
+
 <div class='admin_content'>
 
 <table width='100%' id='columned_table' cellpadding='0' cellspacing='0'>
@@ -33,7 +40,7 @@
   </tr>
   <tr>
     <td width='200' class='columned_elem' valign='top'>
-      <form class='admin_form' style='text-align:center;' onsubmit='ChapterTree.search(Form.serialize(this)); return false;'>
+ <form class='admin_form' style='text-align:center;' onsubmit='ChapterTree.search(Form.serialize(this)); return false;'>
         <input type='text' class='text_field_input' name='search' value='Search..' onfocus="if(this.value=='Search..') { this.value=''; } else { this.select(); }" onblur="if(this.value=='') this.value='Search..';" style='width:200px'/>
       </form>
 
@@ -63,6 +70,8 @@
              { parameters: params } )
           },
 
+
+	  
           selectedPage: null,
 
           selectPage: function(page_id) {
@@ -91,13 +100,20 @@
           },
 
           editPage: function(page_id,params) {
+	     $('save_notice').update('Saving Page');
+	     SCMS.select_tab_num(1);
+	     var params = Form.serialize('page_form');
+	     if (page_id) {
              params += "&page_id=" + page_id;
-             new Ajax.Updater('element_info','<%= url_for :action => 'page', :path => [ @book.id ] %>',
+	     }
+	     if (ChapterTree.saveError) { 
+	     params += "&save_error=1"; }
+             new Ajax.Request('<%= url_for :action => 'save_page', :path => [ @book.id ] %>',
              { parameters: params, evalScripts: true } );
           },
 
           previewPage: function(page_id) {
-            Element.hide('element_preview');
+            $('element_preview').innerHTM = '';
             var params = Form.serialize('page_form');
             params +=  "&page_id=" + page_id;
             new Ajax.Request('<%= url_for :action => 'preview_page', :path => [ @book.id ] %>',
@@ -106,11 +122,10 @@
           },
 
           deletePage: function(page_id) {
-            Element.hide('element_delete');
             var params = Form.serialize('page_form');
             params +=  "&page_id=" + page_id;
             new Ajax.Request('<%= url_for :action => 'delete_page', :path => [ @book.id ] %>',
-             { parameters: params, evalScripts: true } );
+             { parameters: params} );
           
           },
           updateTitle: function(page_id,title) {
@@ -120,20 +135,25 @@
 
         };
       </script>
-      <div id='tree_content' style='width:200px;' >
-        <%= active_tree :chapter, @chapters, :javascript => 'ChapterTree', :children => :child_cache  %> 
-      </div>
+       <%= if @book.book_type == 'flat'
+             render :partial => 'edit_flat'
+           else
+             render :partial => 'edit_tree'
+       end %>
       <div id='search_content' style='width:180px;display:none; padding:10px;'>
         Running Search...
       </div>
       <script>
         new Draggable('new_page', { ghosting: true, revert: true, scroll: window  });
       </script>
+
     </td>
     <td id='columned_tree_spacer' >&nbsp;</td>
     <td class='columned_elem' id='element_info' valign='top' >
 
+     
     </td>
   </tr>
+
 </table>
 </div>

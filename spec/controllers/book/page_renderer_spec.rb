@@ -86,32 +86,23 @@ describe Book::PageRenderer, :type => :controller do
     end
     
     it 'should display chapter content based on page connection' do
-      @rnd = build_renderer('/page', '/book/page/content', {}, {:book => [ :book_id, @chapterbook.id ]})
+      @rnd = build_renderer('/page', '/book/page/content', {:show_first_page => true, :book_id => @chapterbook.id}, {:book => [ :book_id, @chapterbook.id ]})
       BookBook.should_receive( :find_by_id ).with(@chapterbook.id).and_return(@chapterbook)
       @rnd.should_render_feature( :book_page_content )
       renderer_get( @rnd )
 
-      raise @rnd.renderer_feature_data[@page1.id].inspect
+
+      raise @rnd.renderer_feature_data[:page].inspect
+
 
     end
     
     
   end
   
-  describe 'using book id' do
-    
-    it 'should find a book by id' do
-      @rnd = build_renderer('/page', '/book/page/content', {}, {:book => [ :book_id, @chapterbook.id ]})
-      BookBook.should_receive( :find_by_id ).with(@chapterbook.id).and_return(@chapterbook)
-      @rnd.should_render_feature( :book_page_content )
-      renderer_get( @rnd )
-    end
-
-    it 'should display a chapter list based on book / page id'    
-    it 'should display chapter content based on book / page id'
-    
-  end
-    
+  
+## test 2 types of things 1. when you request page 1 you're getting page 1 based on the page connection - and 2. when you request page 1 you don't get any other page2
+  
     
     
 end

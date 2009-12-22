@@ -58,12 +58,17 @@ class Book::PageRenderer < ParagraphRenderer
     return render_paragraph :text => '' unless @book
 
     if @book.flat_url?
-      page_conn_type,page_url = page_connection(:flat_chapter)
+      unless params[:ref].blank? 
+        @page = @book.book_pages.find_by_reference_and_published(params[:ref], true)
+      end 
+      unless @page 
+        page_conn_type,page_url = page_connection(:flat_chapter)
 
-      if @options.show_first_page && page_url.blank?
-        @page = @book.root_node.children[0]
-      else
-        @page = @book.book_pages.find_by_url_and_published(page_url,true,:conditions => 'parent_id IS NOT NULL')
+        if @options.show_first_page && page_url.blank?
+          @page = @book.first_page
+        else
+          @page = @book.book_pages.find_by_url_and_published(page_url,true,:conditions => 'parent_id IS NOT NULL')
+        end
       end
     else
       raise 'Unsupported...'
@@ -71,6 +76,7 @@ class Book::PageRenderer < ParagraphRenderer
 
     if @page
       set_title(@page.name)
+      set_page_connection(:content_id, ['BookPage',@page.id])
     else
       set_title('Invalid Page')
     end
