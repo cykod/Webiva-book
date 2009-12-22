@@ -1,0 +1,8 @@
+
+page.replace_html :edit_page_form, :text => 'Page successfully deleted'
+
+
+page.reload
+
+
+   

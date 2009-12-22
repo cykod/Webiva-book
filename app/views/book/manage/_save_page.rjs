@@ -1,0 +1,5 @@
+if @updated
+ page.replace_html :save_notice, 'Saved'
+else
+ page.replace_html :save_notice, 'error'
+end

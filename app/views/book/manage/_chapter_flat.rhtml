@@ -1,0 +1,4 @@
+<li class='active_tree_leaf' id='chapter_<%= chapter.id %>'>
+  <span class='handle'></span>                                   
+ <%= link_to h(chapter.name), 'javascript:void(0);', :onclick => "ChapterTree.select(#{chapter.id});", :class => 'active_tree_leaf_content' %>
+</li>
