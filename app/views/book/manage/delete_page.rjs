@@ -1,8 +1,9 @@
 
-page.replace_html :edit_page_form, :text => 'Page successfully deleted'
+page.replace_html :element_info, :text => 'Page deleted'
 
 
-page.reload
-
-
-   
+if @book.book_type == 'flat'
+    page.replace 'tree_content', :partial => 'edit_flat'
+else
+    page.replace_html :tree_content, :text => active_tree(:chapter, @chapters, :javascript => 'ChapterTree', :children => :child_cache)
+end     

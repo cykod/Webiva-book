@@ -136,6 +136,8 @@ class Book::ManageController < ModuleController
     @page = @book.book_pages.find(params[:page_id])
     @page.destroy if @page
     @deleted=true
+
+    @chapters = @book.nested_pages
   end
   
 
@@ -143,6 +145,7 @@ class Book::ManageController < ModuleController
      @book =  BookBook.find(params[:path][0])
 
      @pages = @book.book_pages.find(:all,:conditions => [ 'name LIKE ?',"%#{params[:search]}%" ],:order => 'name')
+
   end
   
   def delete

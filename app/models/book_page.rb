@@ -18,7 +18,7 @@ class BookPage < DomainModel
 
   before_save :create_url
   after_move :path_update
-  after_save :force_resave_children, :path_update
+  after_save :force_resave_children
 
   content_node :container_type => 'BookBook', :container_field => 'book_book_id',
   :except => Proc.new { |pg| pg.parent_id }, :published => :published
@@ -62,7 +62,7 @@ class BookPage < DomainModel
   protected
 
   def create_url
-
+    logger.warn('Create URL')
     if  self.book_book.id_url?
       self.url = self.id.to_s
     else
@@ -86,6 +86,7 @@ class BookPage < DomainModel
   end
 
   def path_update(skip_save=false)
+    logger.warn('Path Update')
     if self.book_book.flat_url? || self.book_book.id_url?
       self.path = "/" + self.url.to_s
     else
@@ -100,6 +101,7 @@ class BookPage < DomainModel
   end
 
   def force_resave_children
+    logger.warn('Force Resave Children')
     if @force_resave_children
       self.children.each do |child|
         child.save

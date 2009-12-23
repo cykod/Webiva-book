@@ -92,9 +92,6 @@ describe Book::PageRenderer, :type => :controller do
       renderer_get( @rnd )
 
 
-      raise @rnd.renderer_feature_data[:page].inspect
-
-
     end
     
     
