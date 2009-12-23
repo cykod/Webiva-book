@@ -34,6 +34,10 @@ class Book::ManageController < ModuleController
   def edit
     @book = BookBook.find(params[:path][0])
 
+    if params[:path][1]
+      @page = @book.book_pages.find_by_id(params[:path][1])
+    end
+
     @chapters = @book.nested_pages
 
     if @chapters.length == 0
