@@ -25,6 +25,10 @@ class BookBook < DomainModel
   content_node_type :book, "BookPage", :content_name => :name,:title_field => :name
 
   
+  def content_admin_url(book_page_id)
+    {  :controller => '/book/manage', :action => 'edit', :path => [ self.id, book_page_id ],
+       :title => 'Edit Book Page'.t}
+  end
 
   def root_node
     @root_node ||= self.book_pages.find(:first,:conditions => 'parent_id IS NULL', :order => 'book_pages.id')

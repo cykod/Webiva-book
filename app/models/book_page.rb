@@ -23,6 +23,10 @@ class BookPage < DomainModel
   content_node :container_type => 'BookBook', :container_field => 'book_book_id',
   :except => Proc.new { |pg| pg.parent_id }, :published => :published
 
+  def content_description(language)
+    "Page in \"%s\" Book" / self.book_book.name
+  end
+
   def child_cache
     @child_cache ||= []
   end

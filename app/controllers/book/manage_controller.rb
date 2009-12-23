@@ -39,16 +39,19 @@ class Book::ManageController < ModuleController
 
   def edit
     @book = BookBook.find(params[:path][0])
+
+    if params[:path][1]
+      @page = @book.book_pages.find_by_id(params[:path][1])
+    end
+
+    @chapters = @book.nested_pages
+    
+    if @chapters.length == 0 && @book.book_type == 'chapter'
+      @page = @book.book_pages.create(:name => 'Default Page',:created_by_id => myself.id)
+      @page.move_to_child_of(@book.root_node)
+      @book.reload
       @chapters = @book.nested_pages
-      
-      
-      
-      if @chapters.length == 0 && @book.book_type == 'chapter'
-        @page = @book.book_pages.create(:name => 'Default Page',:created_by_id => myself.id)
-        @page.move_to_child_of(@book.root_node)
-        @book.reload
-        @chapters = @book.nested_pages
-      end
+    end
           
     cms_page_path ['Content'], [ 'Edit %s',nil,@book.name ]
 

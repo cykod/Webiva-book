@@ -77,6 +77,7 @@ class Book::PageRenderer < ParagraphRenderer
     if @page
       set_title(@page.name)
       set_page_connection(:content_id, ['BookPage',@page.id])
+      set_content_node(@page)
     else
       set_title('Invalid Page')
     end
