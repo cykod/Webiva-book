@@ -17,10 +17,11 @@ class Book::PageFeature < ParagraphFeature
     <h1><cms:parent><cms:name/> : </cms:parent><cms:title/></h1>
     <div class='page_body'>
       <cms:body/>
-    </div>
+
+    </div> 
     <div class='page_children'>
       <cms:children>
-        <h2>Sections:</h2>
+        <h2>Sectiossns:</h2>
         <ol>
           <cms:child>
              <li><cms:page_link><cms:name/></cms:page_link>
@@ -31,9 +32,12 @@ class Book::PageFeature < ParagraphFeature
       </cms:children>
     </div>
    </cms:page>
+   <br><hr> <cms:edit_button/>
+
    <cms:no_page>
      Invalid Page
    </cms:no_page>
+
   FEATURE
   
 
@@ -41,23 +45,68 @@ class Book::PageFeature < ParagraphFeature
     webiva_feature(:book_page_content,data) do |c|
       c.expansion_tag('page') { |t| t.locals.page = data[:page] }
       c.value_tag('level') { |t| t.locals.page.level }
-       c.h_tag('page:title') { |t| t.locals.page.name }
-       c.value_tag('page:body') { |t| t.locals.page.body_html  }
-       c.value_tag('page:description') { |t| t.locals.page.description  }
-
+      c.h_tag('page:title') { |t| t.locals.page.name }
+      c.value_tag('page:body') { |t| t.locals.page.body_html  }
+      c.value_tag('page:description') { |t| t.locals.page.description  }
       %w(back parent next previous forward).each do |pg|
         c.expansion_tag("page:#{pg}") { |t| t.locals.other_page = t.locals.page.send("#{pg}_page") }
         c.link_tag("page:#{pg}:page") { |t| data[:url].to_s + t.locals.other_page.path.to_s }
         c.h_tag("page:#{pg}:name") { |t| t.locals.other_page.name }
       end
-
+      
       c.loop_tag('page:child','children') { |t| data[:page].children }
-       c.link_tag('child:page') { |t| data[:url].to_s + t.locals.child.path.to_s }
-       c.h_tag('child:name') { |t| t.locals.child.name }
-       c.value_tag('child:description') { |t| t.locals.child.description }
-       c.value_tag('child:body') { |t| t.locals.child.body_html }
+      c.link_tag('child:page') { |t| data[:url].to_s + t.locals.child.path.to_s }
+      c.h_tag('child:name') { |t| t.locals.child.name }
+      c.value_tag('child:description') { |t| t.locals.child.description }
+      c.value_tag('child:body') { |t| t.locals.child.body_html }
+      
+      c.post_button_tag('edit_button',:button => 'Edit Page') { |t| can_edit ? edit_url : nil}
+
+
     end
+
   end
+  
 
+  feature :book_page_wiki_editor, :default_feature => <<-FEATURE
+ 
+   <cms:page>
+    <table width='100%'><cms:body/>
+     <tr><cms:edit_page>
+      <td>
+          <cms:body><cms:body/></cms:body>
+      </td>
+     </tr>
+     <tr>
+      <td>
+        <cms:submit/>        <cms:clear/>
+       </cms:edit_page>
+        
+      </td>
+     </tr>
+    </table>
+   </cms:page>
+  FEATURE
+  
 
+  def book_page_wiki_editor_feature(data)
+    webiva_feature(:book_page_wiki_editor,data) do |c|
+      c.expansion_tag('page') { |t| t.locals.page = data[:page] }
+      c.value_tag('level') { |t| t.locals.page.level }
+      c.h_tag('page:title') { |t| t.locals.page.name }
+      c.value_tag('page:body') { |t| t.locals.page.body  }
+      c.value_tag('page:name') { |t| t.locals.page.name  }
+      c.value_tag('page:book_book_id') { |t| t.locals.page.book_book_id  }
+
+      c.value_tag('page:description') { |t| t.locals.page.description  }
+      c.form_for_tag('edit_page', :page_versions) 
+      c.field_tag('edit_page:body', :field => 'body',  :control => 'text_area',   :value => '', :rows => '20', :cols => '95') 
+      c.button_tag('edit_page:submit', :value => 'Submit') 
+      c.button_tag('edit_page:clear', :value => 'Start Over') 
+
+    end
+    
+    
+  end
+  
 end

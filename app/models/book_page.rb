@@ -12,7 +12,8 @@ class BookPage < DomainModel
 
   apply_content_filter(:body => :body_html)  do |page|
     { :filter => page.book_book.content_filter,
-      :folder_id => page.book_book.image_folder_id
+      :folder_id => page.book_book.image_folder_id, 
+      :pre_filter => Proc.new { |code| page.replace_page_links(code)}
     }
   end
 
@@ -20,10 +21,8 @@ class BookPage < DomainModel
   after_move :path_update
   after_save :force_resave_children
 
-  content_node :container_type => 'BookBook', 
-  :container_field => 'book_book_id',
-  :except => Proc.new { |pg| pg.parent_id.blank? }, 
-  :published => :published
+  content_node :container_type => 'BookBook', :container_field => 'book_book_id',
+  :except => Proc.new { |pg| pg.parent_id }, :published => :published
 
   def content_description(language)
     "Page in \"%s\" Book" / self.book_book.name
@@ -61,12 +60,22 @@ class BookPage < DomainModel
   # Go to previous page or up
   def back_page
     @back_page ||=  BookPage.find(:first,:conditions => ['book_book_id=? AND lft < ?',self.book_book_id,self.lft ],:order => 'lft DESC')
-    @back_page = :none if !@back_page || @back_page == :none ||  !@back_page.parent_id
+    @back_page = :none if !@back_page ||  !@back_page.parent_id
     @back_page == :none ? nil : @back_page
   end
   
-  protected
 
+  def replace_page_links(code)
+    cd = code.gsub(/\[\[([^\]]+)\]\]/) do |mtch|
+      linktext = $1
+      newlink = $1.gsub(/[ _]+/,"-").downcase
+      "<a href='#{newlink}'>#{linktext}</a>"
+    end
+    cd
+  end
+  
+  protected
+  
   def create_url
     logger.warn('Create URL')
     if  self.book_book.id_url?

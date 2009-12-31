@@ -111,7 +111,6 @@ class Book::ManageController < ModuleController
     @page.updated_by_id = myself.id
     @new_page = true unless @page.id
     
-
     if @page.save_content(myself,params[:page])
       @updated=true;
       @chapters = @book.nested_pages
@@ -189,7 +188,5 @@ class Book::ManageController < ModuleController
       end
     end
   end
-
-  
-
+   
 end
