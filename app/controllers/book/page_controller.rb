@@ -4,12 +4,16 @@ class Book::PageController < ParagraphController
 
   editor_header 'Book Paragraphs'
   
-  editor_for :chapters, :name => "Book Chapters",
+  editor_for :chapters, :name => "Chapters",
   :feature => 'menu',
   :inputs => { :book => [ [:book_id, 'Book ID',:path ]],
     :flat_chapter => [ [:chapter_id,' Chapter URL',:path ]]
   }
-  editor_for :content, :name => "Book Content", :feature => 'book_page_content',
+  editor_for :content, :name => "Content", :feature => 'book_page_content',
+   :inputs => { :book => [ [:book_id, 'Book ID',:path ]],
+    :flat_chapter => [ [:chapter_id,' Chapter URL',:path ]]
+  }
+editor_for :wiki_editor, :name => "Wiki Editor", :feature => 'book_page_wiki_editor',
    :inputs => { :book => [ [:book_id, 'Book ID',:path ]],
     :flat_chapter => [ [:chapter_id,' Chapter URL',:path ]]
   }, 
@@ -21,18 +25,21 @@ class Book::PageController < ParagraphController
 
     validates_presence_of :root_page_id
     page_options :root_page_id
-
+    
     integer_options :levels
-
+    
   end
-
+  
   
   class ContentOptions < HashModel
-    attributes :book_id => nil, :show_first_page => true
-
-    boolean_options :show_first_page
-
-    canonical_paragraph "BookBook", :book_id, :list_page_id => :node
+    attributes :book_id => nil, :show_first_page => false, :enable_wiki => false
+    
+    boolean_options :show_first_page, :enable_wiki
+    
+    
   end
-
-end
+  
+  class WikiEditorOptions < HashModel
+    attributes :book_id => nil, :auto_merge => false
+  end
+end 
