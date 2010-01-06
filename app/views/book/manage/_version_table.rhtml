@@ -1,0 +1,10 @@
+
+<% active_table_for :version_table, @tbl do |t| -%>
+
+   <% active_tr 'book_page_version', t.id do |tr| %>
+    <td><%= h t.name %></td>
+    <td><%= h t.created_at %></td>
+   <% end -%>
+  <% end -%>
+
+ 
