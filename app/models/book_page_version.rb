@@ -3,9 +3,9 @@
 class BookPageVersion < DomainModel
 
   belongs_to :book_book
+  belongs_to :book_page
 
-  acts_as_nested_set :scope => :book_book_id
-
+  belongs_to :created_by, :class_name => 'EndUser', :foreign_key => :created_by_id
   validates_presence_of :name
 
   validates_presence_of :book_book
@@ -17,10 +17,8 @@ class BookPageVersion < DomainModel
     }
   end
 
-  set_table_name "book_page_versions"
 
-  content_node :container_type => 'BookBook', :container_field => 'book_book_id',
-  :except => Proc.new { |pg| pg.parent_id }, :published => :published
+ # content_node :container_type => 'BookBook', :container_field => 'book_book_id'
 
   def content_description(language)
     "Page in \"%s\" Book" / self.book_book.name
@@ -33,6 +31,11 @@ class BookPageVersion < DomainModel
       "<a href='#{newlink}'>#{linktext}</a>"
     end
     cd
+  end
+
+
+  def delete
+    
   end
   
 end

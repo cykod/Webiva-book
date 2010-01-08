@@ -60,7 +60,7 @@ class Book::PageFeature < ParagraphFeature
       c.value_tag('child:description') { |t| t.locals.child.description }
       c.value_tag('child:body') { |t| t.locals.child.body_html }
       
-      c.post_button_tag('edit_button',:button => 'Edit Page') { |t| can_edit ? edit_url : nil}
+      c.post_button_tag('edit_button',:button => 'Edit Page', :method => 'get') { |t| data[:edit_url] }
 
 
     end
@@ -71,10 +71,10 @@ class Book::PageFeature < ParagraphFeature
   feature :book_page_wiki_editor, :default_feature => <<-FEATURE
  
    <cms:page>
-    <table width='100%'><cms:body/>
+    <table width='100%'>
      <tr><cms:edit_page>
       <td>
-          <cms:body><cms:body/></cms:body>
+          <cms:body/>
       </td>
      </tr>
      <tr>
@@ -94,17 +94,24 @@ class Book::PageFeature < ParagraphFeature
       c.expansion_tag('page') { |t| t.locals.page = data[:page] }
       c.value_tag('level') { |t| t.locals.page.level }
       c.h_tag('page:title') { |t| t.locals.page.name }
-      c.value_tag('page:body') { |t| t.locals.page.body  }
-      c.value_tag('page:name') { |t| t.locals.page.name  }
-      c.value_tag('page:book_book_id') { |t| t.locals.page.book_book_id  }
+      c.h_tag('page:body') { |t| t.locals.page.body  }
+      c.h_tag('page:name') { |t| t.locals.page.name  }
+      c.h_tag('page:id') { |t| t.locals.page.name  }
 
+      
+      
       c.value_tag('page:description') { |t| t.locals.page.description  }
-      c.form_for_tag('edit_page', :page_versions) 
-      c.field_tag('edit_page:body', :field => 'body',  :control => 'text_area',   :value => '', :rows => '20', :cols => '95') 
-      c.button_tag('edit_page:submit', :value => 'Submit') 
-      c.button_tag('edit_page:clear', :value => 'Start Over') 
+      c.form_for_tag('edit_page', :page_versions) { |t|  t.locals.page }
+      c.hidden_field('edit_page:ipaddress', :name=> :ipaddress, :value => @ipaddress )  
+      
+      
+      c.field_tag('edit_page:body', :field => 'body',  :control => 'text_area', :rows => '20', :cols => '95' )
 
+      c.button_tag('edit_page:submit', :name => 'commit', :value => 'Submit') 
+      c.button_tag('edit_page:clear', :name => 'reset', :value => 'Start Over') 
     end
+    
+    
     
     
   end

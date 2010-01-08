@@ -4,14 +4,17 @@ class Book::ManageController < ModuleController
 
   component_info 'Book'
   
-  cms_admin_paths 'content'
+  cms_admin_paths 'content',  "Versions" =>  {  :action => 'index'}
+
 
   helper :active_tree
 
-
+  active_table :version_table, BookPageVersion, 
+  [:check,:id,:created_by_id,:version_status,:version_type,:created_at]
+  
   def book
     @book = BookBook.find_by_id(params[:path][0]) || BookBook.new
-
+    
     cms_page_path ['Content'], @book.id ? [ "Configure %s",nil,@book.name ] : 'Create a book'
 
     if request.post? && params[:book]
@@ -38,6 +41,9 @@ class Book::ManageController < ModuleController
   end
 
   def edit
+
+
+    
     @book = BookBook.find(params[:path][0])
 
     if params[:path][1]
@@ -45,18 +51,19 @@ class Book::ManageController < ModuleController
     end
 
     @chapters = @book.nested_pages
-    
+   
     if @chapters.length == 0 && @book.book_type == 'chapter'
       @page = @book.book_pages.create(:name => 'Default Page',:created_by_id => myself.id)
       @page.move_to_child_of(@book.root_node)
       @book.reload
       @chapters = @book.nested_pages
     end
-          
+    
     cms_page_path ['Content'], [ 'Edit %s',nil,@book.name ]
 
     require_js('scriptaculous-sortabletree/sortable_tree.js')
     
+
   end
   
   
@@ -65,12 +72,12 @@ class Book::ManageController < ModuleController
     @book = BookBook.find(params[:path][0])
 
     # return the page and the destination page
- 
+    
     active_tree_move(params[:chapter_tree]) do |page_id,move_page_id|
       [ @book.book_pages.find(page_id), move_page_id ?  @book.book_pages.find(move_page_id) : @book.root_node ]
-    
+      
     end
-  
+    
     render :nothing => true
   end
 
@@ -101,7 +108,10 @@ class Book::ManageController < ModuleController
     @page = @book.book_pages.find_by_id(params[:page_id]) || @book.book_pages.build(:created_by_id => myself.id)
 
     # @page = params[:page_id] ? @book.book_pages.find(params[:page_id]) : @book.book_pages.build(:created_by_id => myself.id)
+    display_version_table false
+
     render :partial => 'page'
+
   end
 
   def save_page
@@ -115,11 +125,11 @@ class Book::ManageController < ModuleController
       @updated=true;
       @chapters = @book.nested_pages
     end
-   
- 
+    
+    
     @save_error = params[:save_error]
   end
-    
+  
   def preview_page
 
     @book =  BookBook.find(params[:path][0])
@@ -144,9 +154,9 @@ class Book::ManageController < ModuleController
   
 
   def search
-     @book =  BookBook.find(params[:path][0])
+    @book =  BookBook.find(params[:path][0])
 
-     @pages = @book.book_pages.find(:all,:conditions => [ 'name LIKE ?',"%#{params[:search]}%" ],:order => 'name')
+    @pages = @book.book_pages.find(:all,:conditions => [ 'name LIKE ?',"%#{params[:search]}%" ],:order => 'name')
 
   end
   
@@ -161,7 +171,32 @@ class Book::ManageController < ModuleController
     end
     
   end
-
+ 
+ 
+  def display_version_table(display=true)
+    
+    @book ||= BookBook.find(params[:path][0])
+    @page ||= @book.book_pages.find_by_id(params[:page_id])
+    
+    active_table_action('version') do |act,pids|
+      case act
+      when 'delete': BookPageVersion.destroy(pids)
+      end 
+    end  
+    
+      @tbl = version_table_generate( params,
+                                     :order => 'created_at DESC',
+                                     :conditions => ['book_page_id = ?',@page.id])
+      render :partial => 'version_table' if display
+      
+    
+  end
+  
+  def view_wiki_edits
+    @wiki_body = BookPageVersion.find_by_id(params[:path])
+    render :partial => 'view_edits'
+  end
+  
   protected
 
   def active_tree_move(pages)

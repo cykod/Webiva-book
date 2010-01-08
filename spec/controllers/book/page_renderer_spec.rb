@@ -94,13 +94,24 @@ describe Book::PageRenderer, :type => :controller do
 
     end
     
-    
+
+  
+  it 'should save page versions edited by a user' do
+      @rnd2 = build_renderer('/page', '/book/page/content', {:show_first_page => true, :enable_wiki => true, :book_id => @chapterbook.id}, {:book => [ :book_id, @chapterbook.id ]})
+
+      @rnd = build_renderer('/page', '/book/page/wiki_editor', {:auto_merge => true, :book_id => @chapterbook.id}, {:book => [ :book_id, @chapterbook.id ]})
+
+        BookBook.should_receive( :find_by_id ).with(@chapterbook.id).and_return(@chapterbook)
+      raise @rnd.inspect
+      @rnd2.should_render_feature( :content )
+      @rnd.should_render_feature( :wiki_editor )
+      renderer_get( @rnd )
+      
   end
-  
-  
-## test 2 types of things 1. when you request page 1 you're getting page 1 based on the page connection - and 2. when you request page 1 you don't get any other page2
-  
-    
-    
+  it 'should determine if a book is editable'
+  it 'should return a proper url for editing/adding book pages'
+  it 'should prompt user to edit page if blank'
+      
+  end  
 end
   

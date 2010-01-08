@@ -32,10 +32,11 @@ editor_for :wiki_editor, :name => "Wiki Editor", :feature => 'book_page_wiki_edi
   
   
   class ContentOptions < HashModel
-    attributes :book_id => nil, :show_first_page => false, :enable_wiki => false
+    attributes :book_id => nil, :show_first_page => false, :enable_wiki => false, :edit_page_id => nil
     
     boolean_options :show_first_page, :enable_wiki
-    
+    page_options :edit_page_id
+
     
   end
   

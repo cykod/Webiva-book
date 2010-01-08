@@ -85,6 +85,8 @@ class Book::PageRenderer < ParagraphRenderer
     end
     
     @url = site_node.node_path
+    
+    @edit_url = edit_url
 
    render_paragraph :text => book_page_content_feature()
   end
@@ -95,9 +97,14 @@ class Book::PageRenderer < ParagraphRenderer
     edit_url if @options.enable_wiki
   end
   def edit_url
-#    @options = wiki_page_url \ book_url 
-     url_for(:path => @page.url)
     
+    if @options.enable_wiki && @page
+      "#{@options.edit_page_url}/#{@page.url}"
+    else
+      nil
+    end
+
+
   end
   def wiki_editor
     @options = paragraph_options(:wiki_editor)
@@ -120,15 +127,16 @@ class Book::PageRenderer < ParagraphRenderer
     else
       raise 'Unsupported...'
     end
+
+    @ipaddress = request.remote_ip
+
     
-    if request.post? 
-      
-      # need to accept the edit data and redirect the user back to the book page
 
+    if request.post? && params[:commit]    
       save_page
-      
+    elsif request.post? && params[:reset]
+    @page.reload
     end
-
     
     if @page
       set_title(@page.name)
@@ -146,13 +154,12 @@ class Book::PageRenderer < ParagraphRenderer
   end
 
   def save_page
+    @page.save_version(myself,params[:page_versions][:body],'wiki','submitted',@ipaddress)
+   
+    
 
-    @version = BookPageVersion.new()
-    @book =  BookBook.find(params[:path][0])
-    @page_versions = params[:page_versions]
+   # redirect_paragraph paragraph_page_url
 
-    #raise params.inspect
-   # @page_versions.save_content(myself)
 
   end
 

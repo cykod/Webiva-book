@@ -10,6 +10,8 @@ class BookPage < DomainModel
 
   validates_presence_of :book_book
 
+  has_many :book_page_versions
+
   apply_content_filter(:body => :body_html)  do |page|
     { :filter => page.book_book.content_filter,
       :folder_id => page.book_book.image_folder_id, 
@@ -73,6 +75,17 @@ class BookPage < DomainModel
     end
     cd
   end
+
+ def save_version(user,version_body,v_type,v_status,ipaddress)
+    self.book_page_versions.create(
+                                   :name => self.name,
+                                   :book_book_id => self.book_book_id,
+                                   :body => version_body,
+                                   :created_by_id => user.id, 
+                                   :version_status => v_status, 
+                                   :version_type => v_type,
+                                   :ipaddress => ipaddress)
+  end
   
   protected
   
@@ -124,7 +137,8 @@ class BookPage < DomainModel
     end
   end
 
-  
+ 
+
   def check_duplicate(name)
     if self.book_book.flat_url?
       self.book_book.book_pages.find(:first,:conditions => ['`url`=? AND book_pages.id != ? ',name,self.id])
