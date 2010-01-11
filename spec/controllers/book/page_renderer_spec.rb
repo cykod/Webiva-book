@@ -85,33 +85,25 @@ describe Book::PageRenderer, :type => :controller do
       end
     end
     
-    it 'should display chapter content based on page connection' do
-      @rnd = build_renderer('/page', '/book/page/content', {:show_first_page => true, :book_id => @chapterbook.id}, {:book => [ :book_id, @chapterbook.id ]})
+     
+    it 'should save page versions edited by a user' do
+      @rnd2 = build_renderer('/page', '/book/page/content', {:show_first_page => true, :enable_wiki => true, :book_id => @chapterbook.id}, {:book => [ :book_id, @chapterbook.id ]})
+      
+      @rnd = build_renderer('/page', '/book/page/wiki_editor', {:allow_create => true, :book_id => @chapterbook.id}, {:book => [ :book_id, @chapterbook.id ]})
+      
       BookBook.should_receive( :find_by_id ).with(@chapterbook.id).and_return(@chapterbook)
-      @rnd.should_render_feature( :book_page_content )
-      renderer_get( @rnd )
+     # raise @rnd.inspect
+      @rnd2.should_render_feature( :content )
 
+
+    #  @rnd.should_render_feature( :wiki_editor )
+      renderer_get( @rnd )
+      # renderer_get( @rnd )
 
     end
+
     
 
-  
-  it 'should save page versions edited by a user' do
-      @rnd2 = build_renderer('/page', '/book/page/content', {:show_first_page => true, :enable_wiki => true, :book_id => @chapterbook.id}, {:book => [ :book_id, @chapterbook.id ]})
-
-      @rnd = build_renderer('/page', '/book/page/wiki_editor', {:auto_merge => true, :book_id => @chapterbook.id}, {:book => [ :book_id, @chapterbook.id ]})
-
-        BookBook.should_receive( :find_by_id ).with(@chapterbook.id).and_return(@chapterbook)
-      raise @rnd.inspect
-      @rnd2.should_render_feature( :content )
-      @rnd.should_render_feature( :wiki_editor )
-      renderer_get( @rnd )
-      
-  end
-  it 'should determine if a book is editable'
-  it 'should return a proper url for editing/adding book pages'
-  it 'should prompt user to edit page if blank'
-      
   end  
 end
-  
+

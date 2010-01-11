@@ -29,9 +29,6 @@ describe Book::ManageController do
     end
     
     
-
-
-
     
     it 'should create a new sub page of @page1' do 
       assert_difference 'BookPage.count', 1 do
@@ -92,7 +89,7 @@ describe Book::ManageController do
       @chapterbook.should_receive( :book_pages ).and_return(book_pages)
       
       post( 'preview_page', :path => [@chapterbook.id], :page_id => @page4.id, :page => {:body => 
-"preview fun markdown\n===================="} )
+              "preview fun markdown\n===================="} )
       @page4.body_html.should == "<h1 id='preview_fun_markdown'>preview fun markdown</h1>"
     end
 
@@ -103,60 +100,66 @@ describe Book::ManageController do
     end
 
 
-    # it 'should create default page if one does not exist' do
+    it 'should create default page if one does not exist' do
+      post('book', :path => '', :action => 'book', :commit => 'Submit', :book => { :book_type => 'chapter',:url_scheme => 'flat', :name => 'Books should have default page'})
+      # raise @blank_chapter_book.id.inspect
 
-    #   @blank_chapter_book = BookBook.create(:name => 'blank chapter book')
+      @blank_chapter_book = BookBook.find_by_name('Books should have default page')
 
-    #   post('edit', :path => @defaultpage_book.id)
-    #   @defaultpage = @blank_chapter_book.book_pages.find_by_book_book_id(@blank_chapter_book.id)
-    #   @defaultpage.name.should == 'Default Page'
-    # end
-     
-    
-  end
-
-
- describe 'book1' do 
-    
-      before(:each) do 
-      mock_editor
-
-     
-
-    def random_string(size=12)
-      (1..size).collect { (i = Kernel.rand(62); i += ((i < 10) ? 48 : ((i < 36) ? 55 : 61 ))).chr }.join
+      post('edit', :path => [@blank_chapter_book.id])
+      @defaultpage = @blank_chapter_book.book_pages.find(:last, :order => 'id asc')
+      # raise @defaultpage.inspect
+      @defaultpage.name.should == 'Default Page'
+      @defaultpage.id.should == 8
     end
-    @rand_name = random_string
+    
 
-    @flatbook =  BookBook.create(:book_type => 'flat', :name => 'flat book')
-    @page1 = @flatbook.book_pages.create(:name => 'a flat one' )
-    @page2 = @flatbook.book_pages.create(:name => 'b flat two' )
-    @page3 = @flatbook.book_pages.create(:name => 'c flat three')
-    @page4 = @flatbook.book_pages.create(:name => 'd flat four' )
-    @page5 = @flatbook.book_pages.create(:name => 'e flat five' )
+
+    
   end
   
+  
+  describe 'book1' do 
+    
+    before(:each) do 
+      mock_editor
+      
+      
+
+      def random_string(size=12)
+        (1..size).collect { (i = Kernel.rand(62); i += ((i < 10) ? 48 : ((i < 36) ? 55 : 61 ))).chr }.join
+      end
+      @rand_name = random_string
+
+      @flatbook =  BookBook.create(:book_type => 'flat', :name => 'flat book')
+      @page1 = @flatbook.book_pages.create(:name => 'a flat one' )
+      @page2 = @flatbook.book_pages.create(:name => 'b flat two' )
+      @page3 = @flatbook.book_pages.create(:name => 'c flat three')
+      @page4 = @flatbook.book_pages.create(:name => 'd flat four' )
+      @page5 = @flatbook.book_pages.create(:name => 'e flat five' )
+    end
+    
     it 'should create a flat book' do
       assert_difference 'BookBook.count', 1 do
         post( 'book', :path => [], :commit => 'Submit', :book => {:cover_file_id => '', :name => @rand_name, :url_scheme => 'flat', :thumb_file_id => '', :preview_wrapper => '', :book_type => 'flat', :description => '', :style_template_id => '', :image_folder_id => '', :content_filter => 'markdown'} )
-      @newflatbook = BookBook.find(:last)
-      @newflatbook.name.should == @rand_name
+        @newflatbook = BookBook.find(:last)
+        @newflatbook.name.should == @rand_name
       end
 
     end
 
-  
-  it 'should create a page in a flat book' do
-    assert_difference 'BookPage.count', 1 do
-      post( 'save_page', :path => [@flatbook.id], :page_id => '', :page => { :name => @rand_name, :body => '', :published => 'true', :description => '' } )
-      @newpage = @flatbook.book_pages.find_by_name(@rand_name)
-      @newpage.should_not be_nil
+    
+    it 'should create a page in a flat book' do
+      assert_difference 'BookPage.count', 1 do
+        post( 'save_page', :path => [@flatbook.id], :page_id => '', :page => { :name => @rand_name, :body => '', :published => 'true', :description => '' } )
+        @newpage = @flatbook.book_pages.find_by_name(@rand_name)
+        @newpage.should_not be_nil
+      end
     end
-  end
- 
-  
-  it 'should be able to delete page4 in the book1' do
-    post( 'delete_page', :path => [@flatbook.id], :page_id => @page4.id);
+    
+    
+    it 'should be able to delete page4 in the book1' do
+      post( 'delete_page', :path => [@flatbook.id], :page_id => @page4.id);
       @doesexist = @flatbook.book_pages.find_by_id(@page4.id)
       @doesexist.should be_nil
     end
@@ -168,7 +171,7 @@ describe Book::ManageController do
       @page4namechange.name.should == 'no longer page 4'
     end
 
-     it 'should be able to preview pages' do
+    it 'should be able to preview pages' do
       BookBook.should_receive( :find ).and_return(@flatbook)
       book_pages = mock('book1')
       
@@ -176,7 +179,7 @@ describe Book::ManageController do
       @flatbook.should_receive( :book_pages ).and_return(book_pages)
       
       post( 'preview_page', :path => [@flatbook.id], :page_id => @page4.id, :page => {:body => 
-"preview fun markdown\n===================="} )
+              "preview fun markdown\n===================="} )
       @page4.body_html.should == "<h1 id='preview_fun_markdown'>preview fun markdown</h1>"
     end
 

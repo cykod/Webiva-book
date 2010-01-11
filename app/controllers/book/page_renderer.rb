@@ -71,21 +71,28 @@ class Book::PageRenderer < ParagraphRenderer
         else
           @page = @book.book_pages.find_by_url_and_published(page_url,true,:conditions => 'parent_id IS NOT NULL')
         end
+
+        if !@page && !page_url.blank?
+          @create_page_url = page_url
+        end
       end
     else
       raise 'Unsupported...'
     end
 
+    @book_save = flash[:book_save]
+
     if @page
       set_title(@page.name)
       set_page_connection(:content_id, ['BookPage',@page.id])
       set_content_node(@page)
+      
     else
       set_title('Invalid Page')
     end
     
     @url = site_node.node_path
-    
+
     @edit_url = edit_url
 
    render_paragraph :text => book_page_content_feature()
@@ -93,21 +100,31 @@ class Book::PageRenderer < ParagraphRenderer
 
   def can_edit
     @options = paragraph_options(:content)
-
     edit_url if @options.enable_wiki
   end
   def edit_url
-    
+
     if @options.enable_wiki && @page
       "#{@options.edit_page_url}/#{@page.url}"
+    elsif @options.enable_wiki && @create_page_url
+      "#{@options.edit_page_url}/#{@create_page_url}"
     else
       nil
     end
 
 
   end
-  def wiki_editor
+  
+  def add_page
+    @book.book_pages.build(:title => title_)
+     return 'this-page'
+  end
+
+ def wiki_editor
+
+
     @options = paragraph_options(:wiki_editor)
+
     @book = find_book
 
     return render_paragraph :text => '' unless @book
@@ -122,6 +139,10 @@ class Book::PageRenderer < ParagraphRenderer
           @page = @book.first_page
         else
           @page = @book.book_pages.find_by_url_and_published(page_url,true,:conditions => 'parent_id IS NOT NULL')
+        end
+
+        if !@page && @options.allow_create && !page_url.blank?
+          @page = @book.book_pages.build(:name => page_url.titleize)
         end
       end
     else
@@ -149,16 +170,20 @@ class Book::PageRenderer < ParagraphRenderer
     end
     
     @url = site_node.node_path
-    
     render_paragraph :text => book_page_wiki_editor_feature()
   end
 
   def save_page
-    @page.save_version(myself,params[:page_versions][:body],'wiki','submitted',@ipaddress)
-   
-    
+    if @page.new_record? && params[:commit]
+      @page.update_attributes(:body => params[:page_versions][:body])
+      @page.move_to_child_of(@book.root_node) if @book.book_type == 'chapter'
 
-   # redirect_paragraph paragraph_page_url
+    end
+    
+    @page.save_version(myself,params[:page_versions][:body],'wiki','submitted',@ipaddress)
+    flash[:book_save] = "Your edits have been submitted for review.".t
+
+    redirect_to  "#{@options.content_page_url}/#{@page.url}"
 
 
   end

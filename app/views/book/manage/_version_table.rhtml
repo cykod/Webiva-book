@@ -1,6 +1,5 @@
-
 <% active_table_for :version_table, @tbl, :refresh_url => url_for(:action => 'display_version_table', :path => @book.id, :page_id => @page.id), 
-:actions => [['Delete','delete','Are you sure you want to delete these edits?']] do |t| -%>
+:actions => [ ['Reviewed','reviewed','Are you sure you want to mark these submissions as reviewed?'], ['Delete','delete','Are you sure you want to delete these edits?'] ] do |t| -%>
 
    <% active_tr 'version', t.id do |tr| %>
    <td><%= tr.checkbox %></td>
@@ -12,7 +11,7 @@
     <% end %>
     <td><%= h t.version_status %></td>
     <td><%= h t.version_type %></td>
-    <td><%= link_to h(t.created_at.to_s:short),  { :path => [ t.id ], :action => "view_wiki_edits" }, :popup => ['new_window_name', 'height=300,width=600','scrollbars=1'], :onclick => 'SCMS.select_tab_num(1)'  %></td>
+    <td><%= link_to h(t.created_at.to_s:short),  { :path => [ t.id ], :action => "view_wiki_edits" }, :popup => ['new_window_name', 'height=300,width=600','scrollbars=1']%></td>
 
    <% end -%>
   <% end -%>

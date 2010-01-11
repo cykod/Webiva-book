@@ -1,7 +1,9 @@
 <div class='cms_form'>
 <%  paragraph_options_form_for :wiki_editor do |f| -%>
  <%= f.select :book_id, [['--Use Page Connection--',0]] + BookBook.select_options, :vertical => true %> 
- <%= f.radio_buttons :auto_merge, [['Yes',true],['No',false]], :label => 'Automatically apply user suggested edits to pages', :vertical => true %> 
- 
+ <%= f.radio_buttons :allow_create, [['Yes',true],['No',false]], :label => 'Allow users to create new pages', :vertical => true %> 
+
+   <%= f.page_selector :content_page_id %>
+
 <% end -%>
 </div>

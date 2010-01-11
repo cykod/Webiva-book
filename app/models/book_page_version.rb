@@ -34,9 +34,6 @@ class BookPageVersion < DomainModel
   end
 
 
-  def delete
-    
-  end
   
 end
 

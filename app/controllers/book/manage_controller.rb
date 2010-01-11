@@ -10,7 +10,8 @@ class Book::ManageController < ModuleController
   helper :active_tree
 
   active_table :version_table, BookPageVersion, 
-  [:check,:id,:created_by_id,:version_status,:version_type,:created_at]
+  [:check,:id,:created_by_id,hdr(:string, :version_status, :label => 'Status'),
+   hdr(:string,:version_type, :label => 'Type'),:created_at]
   
   def book
     @book = BookBook.find_by_id(params[:path][0]) || BookBook.new
@@ -66,7 +67,12 @@ class Book::ManageController < ModuleController
 
   end
   
-  
+  # def create_pdf
+  #   @book = BookBook.find(params[:path][0])
+    
+  #   ## later
+
+  # end
   
   def update_tree
     @book = BookBook.find(params[:path][0])
@@ -178,21 +184,28 @@ class Book::ManageController < ModuleController
     @book ||= BookBook.find(params[:path][0])
     @page ||= @book.book_pages.find_by_id(params[:page_id])
     
-    active_table_action('version') do |act,pids|
-      case act
-      when 'delete': BookPageVersion.destroy(pids)
-      end 
-    end  
-    
+  #  @page_version = BookPageVersion.find(:book_page_id => params[:page_id])
+  #  if @page_version
+      active_table_action('version') do |act,pids|
+        case act
+        when 'delete': BookPageVersion.destroy(pids)
+          # when 'reviewed': pids.book_page_version.update_attributes(pids,:version_status => 'revewied')
+        when 'reviewed': BookPageVersion.find(pids).each { |uv|  uv.update_attribute(:version_status, 'reviewed' ) }
+          
+          
+        end 
+      end  
+      
       @tbl = version_table_generate( params,
                                      :order => 'created_at DESC',
                                      :conditions => ['book_page_id = ?',@page.id])
       render :partial => 'version_table' if display
-      
+   # end
     
   end
   
   def view_wiki_edits
+   
     @wiki_body = BookPageVersion.find_by_id(params[:path])
     render :partial => 'view_edits'
   end

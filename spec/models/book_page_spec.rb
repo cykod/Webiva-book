@@ -56,5 +56,11 @@ EOF
 
     @page.body_html.should == markdown_html
   end
+  
+  
+  
+  
+  
 end
+
   

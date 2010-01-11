@@ -14,6 +14,8 @@ class Book::PageFeature < ParagraphFeature
     
     </tr>
     </table>
+    
+    <cms:notice><div class='notice'><cms:value/></div></cms:notice>
     <h1><cms:parent><cms:name/> : </cms:parent><cms:title/></h1>
     <div class='page_body'>
       <cms:body/>
@@ -31,11 +33,11 @@ class Book::PageFeature < ParagraphFeature
         </ol>
       </cms:children>
     </div>
-   </cms:page>
    <br><hr> <cms:edit_button/>
+   </cms:page>
 
    <cms:no_page>
-     Invalid Page
+<cms:create_link>This page is blank, click to add to it. </cms:create_link>
    </cms:no_page>
 
   FEATURE
@@ -60,9 +62,9 @@ class Book::PageFeature < ParagraphFeature
       c.value_tag('child:description') { |t| t.locals.child.description }
       c.value_tag('child:body') { |t| t.locals.child.body_html }
       
-      c.post_button_tag('edit_button',:button => 'Edit Page', :method => 'get') { |t| data[:edit_url] }
-
-
+      c.link_tag('no_page:create'){ |t| data[:edit_url] }
+      c.post_button_tag('page:edit_button', :button => 'Edit Page', :method => 'get' ) { |t| data[:edit_url] }
+      c.value_tag('page:notice') { |t| data[:book_save] } 
     end
 
   end
@@ -86,6 +88,11 @@ class Book::PageFeature < ParagraphFeature
      </tr>
     </table>
    </cms:page>
+
+   <cms:no_page>
+Invalid Page
+   </cms:no_page>
+
   FEATURE
   
 
