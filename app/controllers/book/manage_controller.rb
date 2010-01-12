@@ -170,6 +170,8 @@ class Book::ManageController < ModuleController
     @book =  BookBook.find(params[:path][0])
     cms_page_path ['Content'],['Delete %s',nil,@book.name ]
 
+  #  raise params.inspect
+    
     if request.post? && params[:destroy] == 'yes'
       @book.destroy
 

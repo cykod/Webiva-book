@@ -1,9 +1,20 @@
 <div class='cms_form'>
 <%  paragraph_options_form_for :wiki_editor do |f| -%>
- <%= f.select :book_id, [['--Use Page Connection--',0]] + BookBook.select_options, :vertical => true %> 
- <%= f.radio_buttons :allow_create, [['Yes',true],['No',false]], :label => 'Allow users to create new pages', :vertical => true %> 
 
-   <%= f.page_selector :content_page_id %>
+   <%= f.header 'Page Display Control' -%>
+
+ <%= f.select :book_id, [['--Use Page Connection--',0]] + BookBook.select_options, :label => 'Book Name', :vertical => false %> 
+ <%= f.page_selector :content_page_id%>
+
+    <%= f.header 'User Content Control' -%>
+
+ <%= f.radio_buttons :allow_create, [['Yes',true],['No',false]], :label => 'Allow new pages', :vertical => false,  :description => 'This allows users to create new pages by entering a new page name after the book URL \nor clicking on link to a blank page.  No system notification is given to the user.'%> 
+ <%= f.radio_buttons :allow_auto_version, [['Yes',true],['No',false]], :label => 'Auto Publish', :vertical => false, :description => 'If users are allowed to create pages, this option will say whether or not they are \nautomatically published.  If YES, the page will appear in the chapterlist as any other \npage would.  If NO, the page must be set to publish from the admin panel'%> 
+
 
 <% end -%>
 </div>
+
+
+
+

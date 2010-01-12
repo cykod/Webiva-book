@@ -10,6 +10,8 @@ class Book::PageRenderer < ParagraphRenderer
   paragraph :content
   paragraph :wiki_editor
 
+  attr_accessor :editor, :body, :edit_type, :version_status, :remote_ip
+ 
   def chapters
 
     # Get book from options
@@ -55,7 +57,7 @@ class Book::PageRenderer < ParagraphRenderer
 
     @options = paragraph_options(:content)
 
-    @book = find_book
+     @book = find_book
 
     return render_paragraph :text => '' unless @book
 
@@ -150,8 +152,7 @@ class Book::PageRenderer < ParagraphRenderer
     end
 
     @ipaddress = request.remote_ip
-
-    
+   
 
     if request.post? && params[:commit]    
       save_page
@@ -174,17 +175,39 @@ class Book::PageRenderer < ParagraphRenderer
   end
 
   def save_page
-    if @page.new_record? && params[:commit]
-      @page.update_attributes(:body => params[:page_versions][:body])
-      @page.move_to_child_of(@book.root_node) if @book.book_type == 'chapter'
+    if params[:commit]
+      @newpage = @page.new_record?
+      
+      if @options.allow_auto_version == true
+        @page.update_attributes(:body => params[:page_versions][:body],:editor => myself, :edit_type => 'wiki_auto', :remote_ip => @ipaddress)
+        @page.move_to_child_of(@book.root_node) if @book.book_type == 'chapter' && @newpage
+        
+        flash[:book_save] = "Page Saved".t
+
+        redirect_to "#{@options.content_page_url}/#{@page.url}"
+        
+      elsif @page.new_record? 
+     
+        @page.update_attributes(:body => params[:page_versions][:body],:editor => myself, :edit_type => 'wiki', :remote_ip => @ipaddress, :published => false)
+        @page.move_to_child_of(@book.root_node) if @book.book_type == 'chapter' && @newpage
+
+        flash[:book_save] = "Page Created and Submitted for review".t
+
+        redirect_to "#{@options.content_page_url}"
+      else 
+
+        @page.save_version(myself, 
+                           params[:page_versions][:body], 
+                           @ipaddress,
+                           'wiki', 
+                           'submitted')
+        
+        flash[:book_save] = "Your edits have been submitted for review.".t
+
+        redirect_to  "#{@options.content_page_url}/#{@page.url}"
+      end
 
     end
-    
-    @page.save_version(myself,params[:page_versions][:body],'wiki','submitted',@ipaddress)
-    flash[:book_save] = "Your edits have been submitted for review.".t
-
-    redirect_to  "#{@options.content_page_url}/#{@page.url}"
-
 
   end
 

@@ -64,6 +64,7 @@ class Book::PageFeature < ParagraphFeature
       
       c.link_tag('no_page:create'){ |t| data[:edit_url] }
       c.post_button_tag('page:edit_button', :button => 'Edit Page', :method => 'get' ) { |t| data[:edit_url] }
+      
       c.value_tag('page:notice') { |t| data[:book_save] } 
     end
 
@@ -113,6 +114,7 @@ Invalid Page
       
       
       c.field_tag('edit_page:body', :field => 'body',  :control => 'text_area', :rows => '20', :cols => '95' )
+      c.field_tag('edit_page:remote_ip', :field => 'remote_ip',  :control => 'text_area', :rows => '20', :cols => '95' )
 
       c.button_tag('edit_page:submit', :name => 'commit', :value => 'Submit') 
       c.button_tag('edit_page:clear', :name => 'reset', :value => 'Start Over') 

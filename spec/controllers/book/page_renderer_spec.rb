@@ -6,14 +6,14 @@ describe Book::PageRenderer, :type => :controller do
 
   integrate_views
 
-  reset_domain_tables :book_books, :book_pages, :book_page_versions, :page_paragraphs
+  reset_domain_tables :book_books, :book_pages, :book_page_versions, :page_paragraphs, :site_nodes
   
   # create a dummy book & pages
   before(:each) do
     
     mock_user
-    
-    @chapterbook = BookBook.create(:name => 'chapter book')
+  
+    @chapterbook = BookBook.create(:name => 'chapter book', :book_type => 'chapter')
     @page1 = @chapterbook.book_pages.create(:name => 'chapter one' , :body => "this is a test to see if we suck" )
     @page1.move_to_child_of(@chapterbook.root_node)
     @page2 = @chapterbook.book_pages.create(:name => 'chapter two' )
@@ -84,26 +84,35 @@ describe Book::PageRenderer, :type => :controller do
         end    
       end
     end
-    
-     
-    it 'should save page versions edited by a user' do
-      @rnd2 = build_renderer('/page', '/book/page/content', {:show_first_page => true, :enable_wiki => true, :book_id => @chapterbook.id}, {:book => [ :book_id, @chapterbook.id ]})
-      
-      @rnd = build_renderer('/page', '/book/page/wiki_editor', {:allow_create => true, :book_id => @chapterbook.id}, {:book => [ :book_id, @chapterbook.id ]})
-      
-      BookBook.should_receive( :find_by_id ).with(@chapterbook.id).and_return(@chapterbook)
-     # raise @rnd.inspect
-      @rnd2.should_render_feature( :content )
-
-
-    #  @rnd.should_render_feature( :wiki_editor )
-      renderer_get( @rnd )
-      # renderer_get( @rnd )
-
-    end
-
-    
-
   end  
+  
+ it 'should save page versions edited by a user' do
+    @content_page = SiteVersion.default.root_node.add_subpage 'content_book'
+      
+    @rnd = build_renderer('/page', '/book/page/wiki_editor', 
+                          {:allow_create => true
+                            
+                            :book_id => @chapterbook.id, 
+                            :content_page_id => @content_page.id},
+                          
+                          {:book => [ :book_id, @chapterbook.id ]})
+    
+    post( 'save_page', :path => [@chapterbook.id], :page_id => @page4.id, :page_versions => {:body => 'content book page version, new page'}, :editor
+          )
+
+    BookBook.should_receive( :find_by_id ).with(@chapterbook.id).and_return(@chapterbook)
+    
+    
+
+    
+    @version = BookPageVersion.find_by_name('content_book')
+
+
+    renderer_get( @rnd )
+
+  end
+  
+  
+  
 end
 

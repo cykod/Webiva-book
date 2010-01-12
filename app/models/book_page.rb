@@ -19,10 +19,13 @@ class BookPage < DomainModel
     }
   end
 
+  attr_accessor :edit_type, :editor, :remote_ip
+
   before_save :create_url
   after_move :path_update
   after_save :force_resave_children
-
+  after_save :auto_save_version
+  
   content_node :container_type => 'BookBook', :container_field => 'book_book_id',
   :except => Proc.new { |pg| pg.parent_id }, :published => :published
 
@@ -76,19 +79,24 @@ class BookPage < DomainModel
     cd
   end
 
- def save_version(user,version_body,v_type,v_status,ipaddress)
+  def save_version(user,version_body,v_type,v_status,ipaddress)
     self.book_page_versions.create(
                                    :name => self.name,
                                    :book_book_id => self.book_book_id,
                                    :body => version_body,
-                                   :created_by_id => user.id, 
+                                   :created_by_id => user, 
                                    :version_status => v_status, 
                                    :version_type => v_type,
                                    :ipaddress => ipaddress)
   end
   
+  def auto_save_version
+    save_version(editor,self.body,edit_type||'editor','auto',remote_ip)
+  end
   protected
   
+
+
   def create_url
     logger.warn('Create URL')
     if  self.book_book.id_url?
@@ -143,7 +151,7 @@ class BookPage < DomainModel
     if self.book_book.flat_url?
       self.book_book.book_pages.find(:first,:conditions => ['`url`=? AND book_pages.id != ? ',name,self.id])
     else
-      self.book_book.book_pages.find(:first,:conditions => ['`url`=? AND book_pages.id != ? AND parent_id=?',name,self.id,self.parent_id])
+      self.book_book.book_pages.find(:first,:conditions => ['`url`=? AND book_pages.id != ? AND parent_id=? ',name,self.id,self.parent_id])
     end
   end
 
