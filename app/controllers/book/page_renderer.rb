@@ -198,9 +198,9 @@ class Book::PageRenderer < ParagraphRenderer
 
         @page.save_version(myself, 
                            params[:page_versions][:body], 
-                           @ipaddress,
+                           'submitted',
                            'wiki', 
-                           'submitted')
+                           @ipaddress)
         
         flash[:book_save] = "Your edits have been submitted for review.".t
 
