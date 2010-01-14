@@ -3,7 +3,7 @@
 class BookBook < DomainModel
 
   has_domain_file :cover_file_id
-  has_domain_file :thumb_file_Id
+  has_domain_file :thumb_file_id
 
   has_many :book_pages, :dependent => :destroy, :order => 'book_pages.name'
 
@@ -22,7 +22,7 @@ class BookBook < DomainModel
   validates_format_of :preview_wrapper, :allow_blank => true, :with => /^(\.|\#)/
   attr_protected :url_scheme, :book_type
 
-  content_node_type :book, "BookPage", :content_name => :name,:title_field => :name, :url_field => :url
+  content_node_type :book, "BookPage", :content_name => :name,:title_field => :full_title, :url_field => :url
 
   
   def content_admin_url(book_page_id)

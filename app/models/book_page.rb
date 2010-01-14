@@ -25,8 +25,16 @@ class BookPage < DomainModel
   :except => Proc.new { |pg| pg.parent_id.blank? }, 
   :published => :published
 
+  def full_title
+    self.book_book.name.to_s + ": " + self.name.to_s
+  end
+
   def content_description(language)
     "Page in \"%s\" Book" / self.book_book.name
+  end
+
+  def content_node_body(language)
+    self.body_html
   end
 
   def child_cache
