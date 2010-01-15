@@ -5,7 +5,7 @@
    <td><%= tr.checkbox %></td>
    <td><%= h t.id %></td>
    <% if t.created_by %>
-    <td><%= h t.created_by %></td>
+    <td><%= h t.created_by.name if t.created_by %></td>
     <% else %>
     <td><%= h t.ipaddress %></td>
     <% end %>

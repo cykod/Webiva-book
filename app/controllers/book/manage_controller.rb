@@ -127,7 +127,7 @@ class Book::ManageController < ModuleController
     @page.updated_by_id = myself.id
     @new_page = true unless @page.id
     
-    if @page.save_content(myself,params[:page])
+    if @page.save_content(myself,params[:page].merge(:editor => myself, :remote_ip => request.remote_ip))
       @updated=true;
       @chapters = @book.nested_pages
     end
@@ -168,10 +168,7 @@ class Book::ManageController < ModuleController
   
   def delete
     @book =  BookBook.find(params[:path][0])
-    cms_page_path ['Content'],['Delete %s',nil,@book.name ]
-
-  #  raise params.inspect
-    
+    cms_page_path ['Content'],['Delete %s',nil,@book.name ] 
     if request.post? && params[:destroy] == 'yes'
       @book.destroy
 
@@ -180,34 +177,33 @@ class Book::ManageController < ModuleController
     
   end
  
- 
-  def display_version_table(display=true)
+  def auto_save
+    if params[:autosave]
+      @page.book_pages.save_version
+    end  
+  end
     
+  def display_version_table(display=true)
     @book ||= BookBook.find(params[:path][0])
     @page ||= @book.book_pages.find_by_id(params[:page_id])
     
-  #  @page_version = BookPageVersion.find(:book_page_id => params[:page_id])
-  #  if @page_version
       active_table_action('version') do |act,pids|
         case act
         when 'delete': BookPageVersion.destroy(pids)
-          # when 'reviewed': pids.book_page_version.update_attributes(pids,:version_status => 'revewied')
         when 'reviewed': BookPageVersion.find(pids).each { |uv|  uv.update_attribute(:version_status, 'reviewed' ) }
-          
-          
         end 
       end  
       
-      @tbl = version_table_generate( params,
-                                     :order => 'created_at DESC',
-                                     :conditions => ['book_page_id = ?',@page.id])
-      render :partial => 'version_table' if display
-   # end
+    @tbl = version_table_generate( params,
+                                   :order => 'created_at DESC',
+                                   :conditions => ['book_page_id = ?',@page.id])
+
+    render :partial => 'version_table' if display
     
   end
   
   def view_wiki_edits
-   
+    
     @wiki_body = BookPageVersion.find_by_id(params[:path])
     render :partial => 'view_edits'
   end
