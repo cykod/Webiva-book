@@ -85,34 +85,48 @@ describe Book::PageRenderer, :type => :controller do
       end
     end
   end  
-  
- it 'should save page versions edited by a user' do
-    @content_page = SiteVersion.default.root_node.add_subpage 'content_book'
-      
-    @rnd = build_renderer('/page', '/book/page/wiki_editor', 
-                          {:allow_create => true
-                            
-                            :book_id => @chapterbook.id, 
-                            :content_page_id => @content_page.id},
-                          
-                          {:book => [ :book_id, @chapterbook.id ]})
+  describe 'wiki editing' do
+
+    it 'should save page versions edited by a user' do
+      @content_page = SiteVersion.default.root_node.add_subpage 'content_book'
+      @rnd = build_renderer('/page', '/book/page/wiki_editor', 
+                            {:allow_create => true,
+                              :book_id => @chapterbook.id, 
+                              :content_page_id => @content_page.id},
+                            {:book => [ :book_id, @chapterbook.id ]})
+     
+      BookBook.should_receive( :find_by_id ).with(@chapterbook.id).and_return(@chapterbook)
+      renderer_get( @rnd )
+
+
+      post( 'index',
+            :commit => 'Submit',
+            :path => [@chapterbook.id], 
+            :page_id => @page4.id, 
+            :page_versions => {
+              :body => 'content book page version, new page'})
+      @version = BookPageVersion.find_by_id('10')
+      @version_should_be == '10'
+
+
+    end
     
-    post( 'save_page', :path => [@chapterbook.id], :page_id => @page4.id, :page_versions => {:body => 'content book page version, new page'}, :editor
-          )
-
-    BookBook.should_receive( :find_by_id ).with(@chapterbook.id).and_return(@chapterbook)
-    
-    
-
-    
-    @version = BookPageVersion.find_by_name('content_book')
-
-
-    renderer_get( @rnd )
-
   end
-  
-  
   
 end
 
+ {"commit"=>"Submit", 
+  "page_versions"=>{
+    "body"=>"test body"}, 
+  "action"=>"index", 
+  "authenticity_token"=>"5cDvNSvOUXpS4Rnh7ziT1ZcWD1t0NxW6peaqnor2vko=", 
+  "path"=>["doc", "testaddedit", "page1"], "controller"=>"page"}
+ 
+
+{"commit"=>"Submit", 
+  "page_versions"=>{
+    "body"=>"content book page version, new page"}, 
+  "page_id"=>"5", 
+  "action"=>"index", 
+  "path"=>"1", 
+  "controller"=>"page"}
