@@ -1,6 +1,6 @@
 <div align='right'> <span id='save_notice'></span>&nbsp;<button onclick='ChapterTree.editPage(<%= @page.id %>); return false;'>Save Page</button></div>
 
-<% ajax_tabs ['Edit',['Preview',"ChapterTree.previewPage(#{@page.id});"],['Versions']],'Edit' do |t| -%>
+<% ajax_tabs ['Edit',['Preview',"ChapterTree.previewPage(#{@page.id});"],['Versions', "ChapterTree.loadVersionTable(#{@page.id});"]],'Edit' do |t| -%>
 
 
 <% t.tab do -%>
@@ -32,7 +32,8 @@
 <% t.tab do -%>
 
 <div id='version_table'>
-<%= render :partial => 'version_table' if @page_version -%>
+
+
 </div>
 
 <% end -%>
