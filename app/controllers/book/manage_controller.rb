@@ -127,7 +127,7 @@ class Book::ManageController < ModuleController
     @page.updated_by_id = myself.id
     @new_page = true unless @page.id
     
-    if @page.save_content(myself,params[:page].merge(:editor => myself, :remote_ip => request.remote_ip))
+    if @page.save_content(myself,params[:page].merge(:editor => myself, :v_status => params[:v_type],:remote_ip => request.remote_ip))
       @updated=true;
       @chapters = @book.nested_pages
     end
@@ -136,6 +136,34 @@ class Book::ManageController < ModuleController
     @save_error = params[:save_error]
   end
   
+  
+  def save_draft
+    @book = BookBook.find(params[:path][0])
+     
+    @page = @book.book_pages.find(params[:page_id])
+    if !params[:version_id].blank?
+      
+      @version = @page.book_page_versions.find_by_id(params[:version_id])
+      
+      @version.update_attributes(:body => params[:page][:body]) if @version
+
+    else
+      @version = @page.save_version(myself, params[:page][:body], 'page', 'draft', @ipaddress)
+ 
+    end
+
+    
+
+  end 
+
+
+
+  def search
+    @book =  BookBook.find(params[:path][0])
+
+    @pages = @book.book_pages.find(:all,:conditions => [ 'name LIKE ?',"%#{params[:search]}%" ],:order => 'name')
+
+  end
   def preview_page
 
     @book =  BookBook.find(params[:path][0])

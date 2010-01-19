@@ -10,10 +10,53 @@
  <%= f.submit_tag 'Save' %> 
 
 <%= hidden_field_tag 'current_page_id', @page.id, :id => 'current_page_id' -%>
- 
+<% if @version
+  raise @version.inspect
+ end %> 
 <% end -%>
 
 <script>
 ChapterTree.saveError = <%= @page.errors.length > 0 ? 'true' : 'false' %>;
+
+</script>
+
+<script> 
+var version_id;
+var page_id;
+
+AutoSave = {
+  
+  draft_timer_id:null,
+
+  draftid:null, 
+  draftHandler: function(changed){
+
+    if (changed == 1 && !AutoSave.draft_timer_id ) {
+      AutoSave.draft_timer_id = setInterval("AutoSave.setDraft(<%= @page.id %>)",3000);
+    } else if (changed == 0) {
+       clearInterval( AutoSave.draft_timer_id );
+       AutoSave.resetDraftId();
+       AutoSave.draft_timer_id = null;
+       
+    }
+  },
+
+  setDraft: function(page_id){
+      
+             var params = Form.serialize('page_form');
+             params += "&page_id=" + page_id;
+             if (AutoSave.draftid) { params += "&version_id=" + AutoSave.draftid; };
+             new Ajax.Request('<%= url_for :action => 'save_draft', :path => [ @book.id ] %>',
+             { parameters: params,  evalScripts: true });
+
+    },
+
+  resetDraftId: function(){
+        AutoSave.draftid=null;
+   }
+}
+
+$('page_body').onkeyup=function() { AutoSave.draftHandler(1); }
+$('page_body').onchange=function() { AutoSave.draftHandler(1); }
 
 </script>
