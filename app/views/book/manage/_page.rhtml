@@ -1,4 +1,4 @@
-<div align='right'> <span id='save_notice'></span>&nbsp;<button onclick='ChapterTree.editPage(<%= @page.id %>); return false;'>Save Page</button></div>
+<div align='right'> <span id='save_notice'></span>&nbsp;<button onclick='ChapterTree.editPage(<%= @page.id %>); AutoSave.draftHandler(0,null,null); return false;'>Save Page</button></div>
 
 <% ajax_tabs ['Edit',['Preview',"ChapterTree.previewPage(#{@page.id});"],['Versions', "ChapterTree.loadVersionTable(#{@page.id});"]],'Edit' do |t| -%>
 

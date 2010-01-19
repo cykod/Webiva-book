@@ -186,6 +186,82 @@ describe Book::ManageController do
 
     
   end
+  
+  
+  describe 'autosave' do
+
+  before(:each) do 
+      mock_editor
+
+      def random_string(size=12)
+        (1..size).collect { (i = Kernel.rand(62); i += ((i < 10) ? 48 : ((i < 36) ? 55 : 61 ))).chr }.join
+      end
+      @rand_name = random_string
+
+      @chapterbook = BookBook.create(:name => 'chapter book')
+      @page1 = @chapterbook.book_pages.create(:name => 'chapter one' )
+      @page1.move_to_child_of(@chapterbook.root_node)
+      @page2 = @chapterbook.book_pages.create(:name => 'chapter two' )
+      @page2.move_to_child_of(@chapterbook.root_node)
+
+    end
+    
+    it 'should create an autosave version' do
+
+      post('save_draft', 
+           :path => [@chapterbook.id], 
+           :page_id => @page1.id, 
+           :page => {
+             :name => @page1.name, 
+             :book_book_id => @chapterbook.id, 
+             :book_page_id => @page1.id, 
+             :body => 'oh isnt this fun'} )
+   
+      @version = @chapterbook.book_page_versions.find(:last, :order => 'updated_at', :conditions => {:version_status => 'draft' })
+
+      @version.id.should == 4
+          
+    end
+    it 'should update that same auto save version ' do
+ # it is important for the draft save not to add
+ #  a new record on save, it should update the existing record
+       post('save_draft', 
+           :path => [@chapterbook.id], 
+           :page_id => @page1.id, 
+           :page => {
+             :name => @page1.name, 
+             :book_book_id => @chapterbook.id, 
+             :book_page_id => @page1.id, 
+             :body => ' isnt this fun'} )
+
+      @version = @chapterbook.book_page_versions.find(:last, :order => 'updated_at', :conditions => {:version_status => 'draft' })
+      
+      @version.id.should == 4
+
+
+      post('save_draft', 
+           :path => [@chapterbook.id], 
+           :page_id => @page1.id, 
+           :version_id => @version.id,
+           :page => {
+             :name => @page1.name, 
+             :book_book_id => @chapterbook.id, 
+             :book_page_id => @page1.id, 
+             :body => 'oh isnt this funner'} )
+      
+      @ver = @chapterbook.book_page_versions.find_by_id(@version.id)
+      @ver.body.should == ' isnt this funner'
+      @ver.id.should == @version.id
+
+
+
+    end
+      
+    
+  end
+
+
+  
 
 
 

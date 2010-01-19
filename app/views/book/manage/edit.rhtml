@@ -41,11 +41,10 @@
   <tr>
     <td width='200' class='columned_elem' valign='top'>
  <form class='admin_form' style='text-align:center;' onsubmit='ChapterTree.search(Form.serialize(this)); return false;'>
-        <input type='text' class='text_field_input' name='search' value='Search..' onfocus="if(this.value=='Search..') { this.value=''; } else { this.select(); }" onblur="if(this.value=='') this.value='Search..';" style='width:200px'/>
-      </form>
+        <input type='text' class='text_field_input' name='search' value='Search..' onfocus="if(this.value=='Search..') { this.value=''; } else { this.select(); }" onblur="if(this.value=='') this.value='Search..';" style='width:200px'/> 
+     </form>
 
-     
-      
+
       <script>
         ChapterTree = {
           select: function(element_id,element) {
@@ -68,7 +67,12 @@
              { parameters: params } )
           },
 
-
+	  loadVersionTable: function(page_id) {
+	  var params = { page_id:page_id };
+	  new Ajax.Updater('version_table','<%= url_for :action => 'display_version_table', :path => [ @book.id ] %>',
+	     { parameters: params, evalScripts:true } )
+	  
+	    },
 	  
           selectedPage: null,
 
@@ -96,6 +100,16 @@
             $('search_content').hide();
 
           },
+
+
+	  autoSaveChanges: function(page_id,version_id) {
+	  if (version_id == undefined) {
+	//  need to go to an udate instead of straight save
+	  }
+	  else {
+	  ChapterTree.saveCurrentPage(page_id)
+	  }
+	  },
 
           saveCurrentPage: function() {
            if($('current_page_id')) {

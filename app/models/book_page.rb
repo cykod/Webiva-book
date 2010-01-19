@@ -19,7 +19,7 @@ class BookPage < DomainModel
     }
   end
 
-  attr_accessor :edit_type, :editor, :remote_ip
+  attr_accessor :edit_type, :editor, :remote_ip, :v_status
 
   before_save :create_url
   after_move :path_update
@@ -99,7 +99,7 @@ class BookPage < DomainModel
   end
   
   def auto_save_version
-    save_version(editor,self.body,edit_type||'editor','auto',remote_ip)
+    save_version(editor,self.body,edit_type||'editor',v_status||'auto',remote_ip)
   end
   protected
   
