@@ -3,7 +3,7 @@
 class BookBook < DomainModel
 
   has_domain_file :cover_file_id
-  has_domain_file :thumb_file_Id
+  has_domain_file :thumb_file_id
 
   has_many :book_page_versions, :dependent => :destroy, :order => 'book_page_versions.name'
   has_many :book_pages, :dependent => :destroy, :order => 'book_pages.name'
