@@ -247,7 +247,7 @@ describe Book::ManageController do
              :name => @page1.name, 
              :book_book_id => @chapterbook.id, 
              :book_page_id => @page1.id, 
-             :body => 'oh isnt this funner'} )
+             :body => ' isnt this funner'} )
       
       @ver = @chapterbook.book_page_versions.find_by_id(@version.id)
       @ver.body.should == ' isnt this funner'
