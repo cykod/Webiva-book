@@ -32,7 +32,7 @@ AutoSave = {
   draftHandler: function(changed){
 
     if (changed == 1 && !AutoSave.draft_timer_id ) {
-      AutoSave.draft_timer_id = setInterval("AutoSave.setDraft(<%= @page.id %>)",3000);
+      AutoSave.draft_timer_id = setInterval("AutoSave.setDraft(<%= @page.id %>)",60000);
     } else if (changed == 0) {
        clearInterval( AutoSave.draft_timer_id );
        AutoSave.resetDraftId();
