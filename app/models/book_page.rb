@@ -73,7 +73,9 @@ class BookPage < DomainModel
   # Go to previous page or up
   def back_page
     @back_page ||=  BookPage.find(:first,:conditions => ['book_book_id=? AND lft < ?',self.book_book_id,self.lft ],:order => 'lft DESC')
-    @back_page = :none if !@back_page ||  !@back_page.parent_id
+    if @back_page != :none
+      @back_page = :none if  !@back_page ||  !@back_page.parent_id
+    end
     @back_page == :none ? nil : @back_page
   end
   

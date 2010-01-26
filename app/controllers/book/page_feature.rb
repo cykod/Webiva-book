@@ -33,7 +33,7 @@ class Book::PageFeature < ParagraphFeature
         </ol>
       </cms:children>
     </div>
-   <br><hr> <cms:edit_button/>
+   <br/><hr/> <cms:edit_button/>
    </cms:page>
 
    <cms:no_page>
@@ -72,28 +72,16 @@ class Book::PageFeature < ParagraphFeature
   
 
   feature :book_page_wiki_editor, :default_feature => <<-FEATURE
- 
-   <cms:page>
-    <table width='100%'>
-     <tr><cms:edit_page>
-      <td>
-          <cms:body/>
-      </td>
-     </tr>
-     <tr>
-      <td>
-        <cms:submit/>        <cms:clear/>
-       </cms:edit_page>
-        
-      </td>
-     </tr>
-    </table>
-   </cms:page>
+  <cms:page>
+   <cms:edit_page>
+     <cms:body/><br/>
+     <cms:submit/>  <cms:clear/>
+   </cms:edit_page>
+  </cms:page>
 
    <cms:no_page>
 Invalid Page
    </cms:no_page>
-
   FEATURE
   
 
