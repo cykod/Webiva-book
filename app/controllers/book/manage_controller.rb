@@ -132,7 +132,11 @@ class Book::ManageController < ModuleController
       @chapters = @book.nested_pages
     end
     
-    
+    if !params[:draft_id].blank?    
+      @version = @page.book_page_versions.find_by_id(params[:draft_id])  
+      @version.delete
+    end
+
     @save_error = params[:save_error]
   end
   
@@ -142,25 +146,15 @@ class Book::ManageController < ModuleController
      
     @page = @book.book_pages.find(params[:page_id])
     if !params[:version_id].blank?
-      
-      @version = @page.book_page_versions.find_by_id(params[:version_id])
-      
+      @version = @page.book_page_versions.find_by_id(params[:version_id])  
       @version.update_attributes(:body => params[:page][:body]) if @version
-
     else
-      @version = @page.save_version(myself, params[:page][:body], 'page', 'draft', @ipaddress)
- 
+      @version = @page.save_version(myself, params[:page][:body], 'page', 'draft', @ipaddress)      
     end
-
-    
-
   end 
-
-
 
   def search
     @book =  BookBook.find(params[:path][0])
-
     @pages = @book.book_pages.find(:all,:conditions => [ 'name LIKE ?',"%#{params[:search]}%" ],:order => 'name')
 
   end
