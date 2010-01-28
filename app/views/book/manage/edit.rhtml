@@ -47,14 +47,40 @@
 
       <script>
         ChapterTree = {
+         exitStatus:null,
+
           select: function(element_id,element) {
+
+
+
+	   if (ChapterTree.confirmExit()) {
+             AutoSave.draftHandler(0,0);  
+
             $('tree_content').show();
+
             $('search_content').hide();
             var params = { page_id: element_id };
+	   
+
+
             new Ajax.Updater('element_info','<%= url_for :action => 'page', :path => [ @book.id ] %>',
              { parameters: params, evalScripts: true } );
-	    
+
+	    }
+	    	    
+
           },
+
+	  confirmExit: function() {
+	  if (AutoSave.pageChanged()) {
+            var cont = confirm('Make sure you have saved changes.  Really want to edit a new page?');	       
+	    return cont;
+          } else { 
+
+            return true;
+          }
+	  
+	  },
 
           drop: function(params) {
            new Ajax.Request('<%= url_for :action => 'update_tree', :path => [ @book.id ] %>',
@@ -63,9 +89,14 @@
           },
           
           add: function(drag_id,drop_id,position) {
+
+	  if (ChapterTree.confirmExit()) {
+             AutoSave.draftHandler(0,0);  
+
             var params = $H({ page_id:drop_id, act:drag_id, position:position });
              new Ajax.Request('<%= url_for :action => 'add_to_tree', :path => [ @book.id ] %>',
-             { parameters: params } )
+             { parameters: params } ) 
+           }
           },
 
 	  loadVersionTable: function(page_id) {
@@ -101,16 +132,7 @@
 
           },
 
-
-	  autoSaveChanges: function(page_id,version_id) {
-	  if (version_id == undefined) {
-	//  need to go to an udate instead of straight save
-	  }
-	  else {
-	  ChapterTree.saveCurrentPage(page_id)
-	  }
-	  },
-
+	
           saveCurrentPage: function() {
            if($('current_page_id')) {
              var page_id = $('current_page_id').value;
@@ -151,16 +173,7 @@
 
           },
 
-	  confirmExit: function() {
-
-	  if (confirm('Are you sure want to leave')){
-	  return true;
-	  } else {
-	  return 
-	  }
-	  
-	  
-	  },
+	
           
 
           previewPage: function(page_id) {
@@ -216,6 +229,12 @@ AutoSave = {
        AutoSave.draft_timer_id = null;
        
     }
+  },
+
+     pageChanged: function(){
+  
+     return AutoSave.draft_timer_id != null;
+     
   },
 
   setDraft: function(page_id){
