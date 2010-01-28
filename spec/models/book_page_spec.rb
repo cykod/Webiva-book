@@ -32,7 +32,7 @@ Hello Nurse
 
 This is a test of the emergency broadcast system, this is only a test.
 
-![Rails](rails.png)
+![Rails](images/rails.png)
 EOF
 
     markdown_html = <<EOF.strip

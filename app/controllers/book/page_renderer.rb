@@ -61,7 +61,9 @@ class Book::PageRenderer < ParagraphRenderer
 
     return render_paragraph :text => '' unless @book
 
-    if @book.flat_url?
+    if editor?
+        @page = @book.first_page
+    elsif @book.flat_url?
       unless params[:ref].blank? 
         @page = @book.book_pages.find_by_reference_and_published(params[:ref], true)
       end 
@@ -86,6 +88,7 @@ class Book::PageRenderer < ParagraphRenderer
 
     if @page
       set_title(@page.name)
+      set_title(@page.name,"page")
       set_page_connection(:content_id, ['BookPage',@page.id])
       set_content_node(@page)
       
