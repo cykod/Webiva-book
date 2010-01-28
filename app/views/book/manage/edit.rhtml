@@ -221,7 +221,7 @@ AutoSave = {
 
     if (changed == 1 && !AutoSave.draft_timer_id ) {
       this_page = page_id;
-      AutoSave.draft_timer_id = setInterval("AutoSave.setDraft(this_page)",6000); 
+      AutoSave.draft_timer_id = setInterval("AutoSave.setDraft(this_page)",60000); 
     } else if (changed == 0) {
        clearInterval( AutoSave.draft_timer_id );
        AutoSave.resetDraftId();
