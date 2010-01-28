@@ -30,7 +30,7 @@ class Book::PageRenderer < ParagraphRenderer
   end
 
   def build_chapter_data(chapters,level,path = '',current_path='')
-     chapter_selected = nil
+    chapter_selected = nil
      chaps = chapters.map do |chapter|
       if chapter.published?
         url =  ( path + chapter.url.to_s)
@@ -178,7 +178,7 @@ class Book::PageRenderer < ParagraphRenderer
   end
 
   def save_page
-    if params[:commit]
+    if params[:commit] && @page
       @newpage = @page.new_record?
       
       if @options.allow_auto_version == true

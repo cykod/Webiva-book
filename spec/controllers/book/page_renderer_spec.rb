@@ -92,41 +92,26 @@ describe Book::PageRenderer, :type => :controller do
       @rnd = build_renderer('/page', '/book/page/wiki_editor', 
                             {:allow_create => true,
                               :book_id => @chapterbook.id, 
-                              :content_page_id => @content_page.id},
-                            {:book => [ :book_id, @chapterbook.id ]})
+                              :content_page_id => @content_page.id
+                            },
+                            {:book => [ :book_id, @chapterbook.id ],
+                             :flat_chapter => @page1.url
+                            })
      
       BookBook.should_receive( :find_by_id ).with(@chapterbook.id).and_return(@chapterbook)
-      renderer_get( @rnd )
 
+      @page1.book_page_versions.count.should == 1
 
-      post( 'index',
+      renderer_post( @rnd, 
             :commit => 'Submit',
-            :path => [@chapterbook.id], 
-            :page_id => @page4.id, 
             :page_versions => {
               :body => 'content book page version, new page'})
-      @version = BookPageVersion.find_by_id('10')
-      @version_should_be == '10'
-
-
+      # Need to add test back in
+      @page1.reload
+      @page1.book_page_versions.count.should == 2
     end
     
   end
   
 end
 
- {"commit"=>"Submit", 
-  "page_versions"=>{
-    "body"=>"test body"}, 
-  "action"=>"index", 
-  "authenticity_token"=>"5cDvNSvOUXpS4Rnh7ziT1ZcWD1t0NxW6peaqnor2vko=", 
-  "path"=>["doc", "testaddedit", "page1"], "controller"=>"page"}
- 
-
-{"commit"=>"Submit", 
-  "page_versions"=>{
-    "body"=>"content book page version, new page"}, 
-  "page_id"=>"5", 
-  "action"=>"index", 
-  "path"=>"1", 
-  "controller"=>"page"}
