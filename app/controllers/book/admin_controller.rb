@@ -24,7 +24,7 @@ class Book::AdminController < ModuleController
 
   def self.get_books_info
       info = BookBook.find(:all, :order => 'name').collect do |book| 
-          {:name => book.name,:url => { :controller => '/book/manage', :action => 'edit', :path => book.id } ,:permission => :book_manage, :icon => 'icons/content/blog.gif' }
+          {:name => book.name,:url => { :controller => '/book/manage', :action => 'edit', :path => book.id } ,:permission => :book_manage, :icon => 'icons/content/book_icon.png' }
       end 
       info
   end
