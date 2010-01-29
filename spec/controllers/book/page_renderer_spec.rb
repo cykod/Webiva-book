@@ -95,7 +95,7 @@ describe Book::PageRenderer, :type => :controller do
                               :content_page_id => @content_page.id
                             },
                             {:book => [ :book_id, @chapterbook.id ],
-                             :flat_chapter => @page1.url
+                             :flat_chapter =>[ :chapter_id ,@page1.url ]
                             })
      
       BookBook.should_receive( :find_by_id ).with(@chapterbook.id).and_return(@chapterbook)

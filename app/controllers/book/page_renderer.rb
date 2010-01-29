@@ -158,7 +158,7 @@ class Book::PageRenderer < ParagraphRenderer
    
 
     if request.post? && params[:commit]    
-      save_page
+      return if save_page
     elsif request.post? && params[:reset]
     @page.reload
     end
@@ -187,8 +187,8 @@ class Book::PageRenderer < ParagraphRenderer
         
         flash[:book_save] = "Page Saved".t
 
-        redirect_to "#{@options.content_page_url}/#{@page.url}"
-        
+        redirect_paragraph "#{@options.content_page_url}/#{@page.url}"
+        return true
       elsif @page.new_record? 
      
         @page.update_attributes(:body => params[:page_versions][:body],:editor => myself, :edit_type => 'wiki', :remote_ip => @ipaddress, :published => false)
@@ -196,7 +196,8 @@ class Book::PageRenderer < ParagraphRenderer
 
         flash[:book_save] = "Page Created and Submitted for review".t
 
-        redirect_to "#{@options.content_page_url}"
+        redirect_paragraph "#{@options.content_page_url}"
+        return true
       else 
 
         @page.save_version(myself, 
@@ -208,9 +209,10 @@ class Book::PageRenderer < ParagraphRenderer
         
         flash[:book_save] = "Your edits have been submitted for review.".t
 
-        redirect_to  "#{@options.content_page_url}/#{@page.url}"
+        redirect_paragraph  "#{@options.content_page_url}/#{@page.url}"
+        return true
       end
-
+      return false
     end
 
   end
