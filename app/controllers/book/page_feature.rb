@@ -23,7 +23,7 @@ class Book::PageFeature < ParagraphFeature
     </div> 
     <div class='page_children'>
       <cms:children>
-        <h2>Sectiossns:</h2>
+        <h2>Sections:</h2>
         <ol>
           <cms:child>
              <li><cms:page_link><cms:name/></cms:page_link>
@@ -105,7 +105,7 @@ Invalid Page
       c.h_tag("page:#{pg}:name") { |t| t.locals.other_page.name }
     end
     
-    c.loop_tag('page:child','children') { |t| t.locals.page.children }
+    c.loop_tag('page:child','children') { |t| t.locals.page.children.find(:all,:conditions => {  :published => true }) }
     c.link_tag('child:page') { |t| t.locals.url.to_s + t.locals.child.path.to_s }
     c.h_tag('child:name') { |t| t.locals.child.name }
     c.value_tag('child:description') { |t| t.locals.child.description }
