@@ -152,7 +152,56 @@ class Book::ManageController < ModuleController
       @version = @page.save_version(myself, params[:page][:body], 'page', 'draft', @ipaddress)      
     end
   end 
+  ############# export
+  
+  def export
+    @book ||= BookBook.find(params[:path][0])
+    cms_page_path ['Content'], [ 'Export Pages in %s',nil,@book.name ]
+    @export_options =  [[ 'CSV - Comma Separated Values', 'csv' ]
+                       ]   
+    #    @export = DefaultsHashObject.new(:export_download => 'all', :export_format => 'csv')
+  end
+  def generate_export
+    @book = BookBook.find(params[:path][0])
+    worker_key = @book.run_worker(:export_book,
+                                  :export_download => params[:export][:download],
+                                  :export_format => params[:export][:export_format]
+                                  )
+    
+    
+    session[:book_download_worker_key] = worker_key
+    
+    render :nothing => true
+    
+  end
+  def status   
+    if(session[:book_download_worker_key]) 
+      results =  Workling.return.get(session[:book_download_worker_key])
+      
+      @completed = results[:completed] if results
+    end
+  end
 
+
+  def download_file
+    @book =  BookBook.find(params[:path][0])
+    if(session[:book_download_worker_key]) 
+      results = Workling.return.get(session[:book_download_worker_key])
+      
+      send_file(results[:filename],
+                :stream => true,
+                :type => "text/" + results[:type],
+                :disposition => 'attachment',
+                :filename => sprintf("%s_%d.%s",@book.name.humanize,Time.now.strftime("%Y_%m_%d"),results[:type])
+                )
+      
+      session[:book_download_worker_key] = nil
+    else
+      render :nothing => true
+    end
+    
+  end
+  ############# export
   def search
     @book =  BookBook.find(params[:path][0])
     @pages = @book.book_pages.find(:all,:conditions => [ 'name LIKE ?',"%#{params[:search]}%" ],:order => 'name')

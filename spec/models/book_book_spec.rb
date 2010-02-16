@@ -16,7 +16,21 @@ describe BookBook do
     @book.root_node.should_not be_nil
 
   end
-
+  it "should create an exported book" do
+    @book = BookBook.create(:name => 'book')
+    @book.export_book('csv').should_not be_nil
+    @filename = Dir.entries("#{RAILS_ROOT}/tmp/export/").detect {|f| f.match /book_export/}
+    @filename.should == '1_book_export'
+    
+  end
+  it "should not contain root pages" do
+     @book = BookBook.create(:name => 'book')
+    @book.book_pages.create(:name => 'new_page')
+    @filename = Dir.entries("#{RAILS_ROOT}/tmp/export/").detect {|f| f.match /book_export/}
+    @export_contents = IO.read("#{RAILS_ROOT}/tmp/export/#{@filename}").grep(/Root/)
+    
+    @export_contents.should == []
+  end
  
 end
   

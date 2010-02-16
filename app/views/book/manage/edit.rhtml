@@ -1,7 +1,8 @@
 <% action_panel do |p| -%>
   <%= p.link 'Configure Book',:action => 'book',:path => [ @book.id ], :icon => 'configure.gif' %> 
   <%= p.link 'Delete Book', :action => 'delete', :path => [ @book.id ], :icon => 'delete.gif', :right => true %>
-  
+  <%= p.link 'Export Book', :action => 'export',:path => [ @book.id ], :icon => 'configure.gif' %> 
+
 <% end -%>
 
 <hr/>

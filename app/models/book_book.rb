@@ -99,5 +99,34 @@ class BookBook < DomainModel
   end
 
   def preview_wrapper_end; '</div>'; end
+ def export_book(args) 
+      results = { }
+    # args = { :book_id, :export_download, :export_format, :range_start, :range_end }
+    
+    results[:completed] = false
+        
+    
+    @pages = self.book_pages.find(:all, :conditions => ["name != ?",'Root'])
 
+    tmp_path = "#{RAILS_ROOT}/tmp/export/"
+    FileUtils.mkpath(tmp_path)
+    
+    filename  = tmp_path + self.id.to_s + "_book_export"
+    
+
+    results[:filename] = filename
+
+     
+    CSV.open(filename,'w') do |writer|
+      @pages.each_with_index do |user,idx|
+        user.export_csv(writer,  :header => idx == 0,
+                                 :include => args[:export_options])
+      end
+    end
+    results[:entries] = @pages.length
+    results[:type] = 'csv'
+    results[:completed] = 1
+    
+    results
+  end
 end
