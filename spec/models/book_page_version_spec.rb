@@ -19,5 +19,31 @@ describe BookPageVersion do
     
     @version.id.should_not be_nil
   end
+  it "should create proper page links" do
+    markdown_sample = <<EOF  
+
+Link One : [[yes title]](linktext)  
+  
+Link Two : [[no title]]
+EOF
+
+    markdown_html = nil
+
+    @book = BookBook.create(:name => 'book',
+                            :content_filter => 'markdown')
+
+    @page = @book.book_pages.create(:name => 'page.name')
+    @page.move_to_child_of(@book.root_node)
+
+
+    @version = BookPageVersion.create(
+                                  :name => "page.name", 
+                                  :book_book_id => 1, 
+                                  :book_page_id => 2, 
+                                  :body => markdown_sample,
+                                  :version_status => 'unchecked')
+
+    @version.body_html.should == markdown_html
+  end
   
 end

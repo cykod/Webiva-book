@@ -13,15 +13,22 @@ class BookPageVersion < DomainModel
 
   
   def replace_page_links(code)
-    cd = code.gsub(/\[\[([^\]]+)\]\]/) do |mtch|
-      linktext = $1
-      newlink = $1.gsub(/[ _]+/,"-").downcase
-      "<a href='#{newlink}'>#{linktext}</a>"
+    cd = code.gsub(/\[\[([^\]]+)\]\](\(([^\)]+)\))?/) do |mtch|
+      titleinbrackets = $1 
+      linkinparens = $2
+      linktext = $3
+      if linktext
+        newlink = $3.gsub(/[ _]+/,"-").downcase
+        "[#{titleinbrackets}](#{newlink})"
+      else
+        newlink = $1.gsub(/[ _]+/,"-").downcase
+        "[#{titleinbrackets}](#{newlink})"
+      end   
     end
     cd
   end
-
-
+  
+  
   
 end
 
