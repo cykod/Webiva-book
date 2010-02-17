@@ -29,7 +29,35 @@ class BookPage < DomainModel
   content_node :container_type => 'BookBook', :container_field => 'book_book_id',
   :except => Proc.new { |pg| !pg.parent_id }, :published => :published
 
+  def export_csv(writer,options = {}) #:nodoc:
+    fields = [ ['id', 'Page ID'.t ],
+               ['name', 'Page Title'.t ],
+               ['description', 'Description'.t ],
+               ['published', 'Published'.t ],
+               ['body', 'Page Body'.t ],
+               ['parent_id', 'Parent Title'.t ]
+             ] 
+    opts = options.delete(:include) ||  []
+   
+    
+    
+     
+    
+    if options[:header]
+      writer << fields.collect do |fld|
+        fld[1]
+      end
+    end
+    writer << fields.collect do |fld|
+      if fld[0]
+        self.send(fld[0])
+      else
+        fld[2]
+      end
+    end
+  end
 
+ 
   def full_title
     self.book_book.name.to_s + ": " + self.name.to_s
   end

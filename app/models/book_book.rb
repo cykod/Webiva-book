@@ -118,8 +118,8 @@ class BookBook < DomainModel
 
      
     CSV.open(filename,'w') do |writer|
-      @pages.each_with_index do |user,idx|
-        user.export_csv(writer,  :header => idx == 0,
+      @pages.each_with_index do |page,idx|
+        page.export_csv(writer,  :header => idx == 0,
                                  :include => args[:export_options])
       end
     end
