@@ -3,7 +3,9 @@
 :actions => [ ['Publish','publish','Are you sure you want to change pages publication status?'], 
               ['Unpublish','unpublish','Are you sure you want to change pages publication status?'], 
               ['Delete','delete','Are you sure you want to delete these edits?'],
-              ['Add Subpages','js','Pages.addSubs();']] do |t| -%>
+              ['Add Subpages','js',"Pages.addSubs();"]] do |t| -%>
+
+
 
    <% active_tr 'bulkview', t.id do |tr| %>
    <td><%= tr.checkbox %></td>

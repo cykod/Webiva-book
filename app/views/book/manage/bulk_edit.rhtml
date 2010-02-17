@@ -1,7 +1,6 @@
 <% action_panel do |p| -%>
   <%= p.link 'Configure Book',:action => 'book',:path => [ @book.id ], :icon => 'configure.gif' %> 
   <%= p.link 'Edit Book',:action => 'edit',:path => [ @book.id ], :icon => 'configure.gif' %> 
-  <%= p.link 'Export Book',:action => 'export',:path => [ @book.id ], :icon => 'configure.gif' %> 
 
   <%= p.link 'Delete Book', :action => 'delete', :path => [ @book.id ], :icon => 'delete.gif', :right => true %>
   
@@ -24,8 +23,19 @@
 			Pages = {
 
 	   addSubs: function() {
-	       SCMS.remoteOverlay("<%= url_for :action => 'add_subpages_form' , :path => [ @book.id ] %>", params);
-	   },
+
+     var page_ids = [];
+      var elements = $('bulkview_table_update_form').getInputs();
+      elements.each(function(elem) {
+        if(elem.type == 'checkbox' && elem.className == 'entry_checkbox') {
+          if(elem.checked)
+              page_ids.push("page_ids[]=" + encodeURIComponent(elem.value));
+        }
+      });
+
+      SCMS.remoteOverlay("<%= url_for :action => 'add_subpages_form' %>?" + page_ids.join("&") );
+    },
+
 	   addSubsSubmit: function(frm) {
 
 	       this.tableAction('add_subs',Form.serialize(frm));

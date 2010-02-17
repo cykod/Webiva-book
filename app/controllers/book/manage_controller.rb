@@ -46,8 +46,6 @@ class Book::ManageController < ModuleController
 
   def edit
 
-
-    
     @book = BookBook.find(params[:path][0])
 
     if params[:path][1]
@@ -55,7 +53,7 @@ class Book::ManageController < ModuleController
     end
 
     @chapters = @book.nested_pages
-   
+    
     if @chapters.length == 0 && @book.book_type == 'chapter'
       @page = @book.book_pages.create(:name => 'Default Page',:created_by_id => myself.id)
       @page.move_to_child_of(@book.root_node)
@@ -69,7 +67,7 @@ class Book::ManageController < ModuleController
     
 
   end
-   
+  
   def update_tree
     @book = BookBook.find(params[:path][0])
 
@@ -139,7 +137,7 @@ class Book::ManageController < ModuleController
   
   def save_draft
     @book = BookBook.find(params[:path][0])
-     
+    
     @page = @book.book_pages.find(params[:page_id])
     if !params[:version_id].blank?
       @version = @page.book_page_versions.find_by_id(params[:version_id])  
@@ -174,16 +172,7 @@ class Book::ManageController < ModuleController
     @deleted=true
 
     @chapters = @book.nested_pages
-  end
-  
-
-  def search
-    @book =  BookBook.find(params[:path][0])
-
-    @pages = @book.book_pages.find(:all,:conditions => [ 'name LIKE ?',"%#{params[:search]}%" ],:order => 'name')
-
-  end
-  
+  end 
   def delete
     @book =  BookBook.find(params[:path][0])
     cms_page_path ['Content'],['Delete %s',nil,@book.name ] 
@@ -194,24 +183,24 @@ class Book::ManageController < ModuleController
     end
     
   end
- 
+  
   def auto_save
     if params[:autosave]
       @page.book_pages.save_version
     end  
   end
-    
+  
   def display_version_table(display=true)
     @book ||= BookBook.find(params[:path][0])
     @page ||= @book.book_pages.find_by_id(params[:page_id])
     
-      active_table_action('version') do |act,pids|
-        case act
-        when 'delete': BookPageVersion.destroy(pids)
-        when 'reviewed': BookPageVersion.find(pids).each { |uv|  uv.update_attribute(:version_status, 'reviewed' ) }
-        end 
-      end  
-      
+    active_table_action('version') do |act,pids|
+      case act
+      when 'delete': BookPageVersion.destroy(pids)
+      when 'reviewed': BookPageVersion.find(pids).each { |uv|  uv.update_attribute(:version_status, 'reviewed' ) }
+      end 
+    end  
+    
     @tbl = version_table_generate( params,
                                    :order => 'created_at DESC',
                                    :conditions => ['book_page_id = ?',@page.id])
@@ -225,9 +214,9 @@ class Book::ManageController < ModuleController
     @wiki_body = BookPageVersion.find_by_id(params[:path])
     render :partial => 'view_edits'
   end
-    def add_subpages_form
+  def add_subpages_form
+
     render :partial => 'add_subpages_form'
-    
   end
   def edit_meta_form 
     @book = BookBook.find(params[:path][0])
@@ -236,9 +225,9 @@ class Book::ManageController < ModuleController
     render :partial => 'edit_meta_form'
     
   end
-
- def save_meta
-#    raise params.inspect
+  
+  def save_meta
+    #    raise params.inspect
     @book =  BookBook.find(params[:path][0])
     @page = @book.book_pages.find_by_id(params[:page_id])   
   end
@@ -253,18 +242,17 @@ class Book::ManageController < ModuleController
   def display_bulkview_table(display=true)
     @book ||= BookBook.find(params[:path][0])
     
-      active_table_action('bulkview') do |act,pids|
-        case act
-        when 'add subpages': BookPage.destroy(pids)
-        when 'publish': BookPage.find(pids).each { |uv|  uv.update_attribute(:published, true ) }
-        when 'unpublish': BookPage.find(pids).each { |uv|  uv.update_attribute(:published, false ) }
-        when 'delete': BookPage.destroy(pids) 
-        end 
-      end  
-      
+    active_table_action('bulkview') do |act,pids|
+      case act
+      when 'add subpages': BookPage.find(pids).each { |uv|  uv.update_attribute(:published, true ) }
+      when 'publish': BookPage.find(pids).each { |uv|  uv.update_attribute(:published, true ) }
+      when 'unpublish': BookPage.find(pids).each { |uv|  uv.update_attribute(:published, false ) }
+      when 'delete': BookPage.destroy(pids) 
+      end 
+    end  
+    
     @tbl = bulkview_table_generate( params,
-                                   :conditions => ['book_book_id = ? and name != ?',@book.id,'Root'])
-
+                                    :conditions => ['book_book_id = ? and name != ?',@book.id,'Root'])
     render :partial => 'bulkview_table' if display
     
   end
@@ -295,5 +283,5 @@ class Book::ManageController < ModuleController
       end
     end
   end
-   
+  
 end
