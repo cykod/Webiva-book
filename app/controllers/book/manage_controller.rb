@@ -13,6 +13,9 @@ class Book::ManageController < ModuleController
   [:check,:id,:created_by_id,hdr(:string, :version_status, :label => 'Status'),
    hdr(:string,:version_type, :label => 'Type'),:created_at]
   
+  active_table :bulkview_table, BookPage, 
+  [:check,:published,:name,hdr(:string,:description,:label => 'Page Description'),:created_at, :parent_id]
+  
   def book
     @book = BookBook.find_by_id(params[:path][0]) || BookBook.new
     
@@ -66,14 +69,7 @@ class Book::ManageController < ModuleController
     
 
   end
-  
-  # def create_pdf
-  #   @book = BookBook.find(params[:path][0])
-    
-  #   ## later
-
-  # end
-  
+   
   def update_tree
     @book = BookBook.find(params[:path][0])
 
@@ -228,6 +224,49 @@ class Book::ManageController < ModuleController
     
     @wiki_body = BookPageVersion.find_by_id(params[:path])
     render :partial => 'view_edits'
+  end
+    def add_subpages_form
+    render :partial => 'add_subpages_form'
+    
+  end
+  def edit_meta_form 
+    @book = BookBook.find(params[:path][0])
+    @page = @book.book_pages.find_by_id(params[:page_id])
+    
+    render :partial => 'edit_meta_form'
+    
+  end
+
+ def save_meta
+#    raise params.inspect
+    @book =  BookBook.find(params[:path][0])
+    @page = @book.book_pages.find_by_id(params[:page_id])   
+  end
+  def bulk_edit
+    @book ||= BookBook.find(params[:path][0])
+
+    cms_page_path ['Content'], [ 'Bulk Edit Pages in %s',nil,@book.name ]
+
+    display_bulkview_table(display)
+    
+  end
+  def display_bulkview_table(display=true)
+    @book ||= BookBook.find(params[:path][0])
+    
+      active_table_action('bulkview') do |act,pids|
+        case act
+        when 'add subpages': BookPage.destroy(pids)
+        when 'publish': BookPage.find(pids).each { |uv|  uv.update_attribute(:published, true ) }
+        when 'unpublish': BookPage.find(pids).each { |uv|  uv.update_attribute(:published, false ) }
+        when 'delete': BookPage.destroy(pids) 
+        end 
+      end  
+      
+    @tbl = bulkview_table_generate( params,
+                                   :conditions => ['book_book_id = ? and name != ?',@book.id,'Root'])
+
+    render :partial => 'bulkview_table' if display
+    
   end
   
   protected

@@ -1,6 +1,7 @@
 <% action_panel do |p| -%>
   <%= p.link 'Configure Book',:action => 'book',:path => [ @book.id ], :icon => 'configure.gif' %> 
   <%= p.link 'Delete Book', :action => 'delete', :path => [ @book.id ], :icon => 'delete.gif', :right => true %>
+  <%= p.link 'Bulk Edit Pages',:action => 'bulk_edit',:path => [ @book.id ], :icon => 'configure.gif' %> 
   
 <% end -%>
 

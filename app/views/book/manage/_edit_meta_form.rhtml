@@ -1,0 +1,17 @@
+<div class='cms_form'>
+<h3>Edit Page Meta Information</h3>
+<br/>
+   <% admin_form_for :page, @page, :html => {:onsubmit => 'Pages.editMetaSubmit(this); return false;' } do |f| %>
+
+   <%= f.text_field :page_names, :label => 'Title', :value => @page.name, :vertical => true %>
+   <%= f.text_area :page_names, :label => 'Description', :value => @page.description, :vertical => true, :cols => 40, :rows => 5 %>
+   <%= f.text_field :page_names, :label => 'Reference', :value => @page.reference, :vertical => true %>
+   <%= f.cancel_submit_buttons 'Cancel', 'Submit', {:onclick=>'RedBox.close(); return false;'} %>
+<br/>
+<% end %>
+</div>
+
+
+</div>
+
+	     

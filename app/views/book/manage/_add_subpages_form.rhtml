@@ -1,0 +1,17 @@
+<div class='cms_form'>
+<h3>Add Subpages to Each of the Selected Pages</h3>
+<br/>
+        <% admin_form_for :page ,nil, :html => {:onsubmit => 'Pages.addSubsSubmit(this); return false;' } do |f| %>
+<%   raise params.inspect %>
+
+<%   .each do |pg| %>
+<%= f.text_area :page_names, :label => "page_name[#{pg.id}]", :vertical => true, :cols => 40, :rows => 5 %>
+<%  end %>
+      <%= f.cancel_submit_buttons 'Cancel', 'Submit', {:onclick=>'RedBox.close(); return false;'} %>
+<% end %>
+
+
+</div>
+
+
+</div>
