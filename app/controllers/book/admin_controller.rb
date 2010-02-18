@@ -3,7 +3,7 @@
 class Book::AdminController < ModuleController
 
   component_info 'Book', :description => 'Book support', 
-                              :access => :private
+                              :access => :public
                               
   # Register a handler feature
   register_permission_category :book, "Book" ,"Permissions related to Book"
