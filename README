@@ -1,0 +1,5 @@
+Module providing Book features for the Webiva Content Management system.
+
+Install in vendor/modules and activate via Options -> Modules
+
+All Code Copyright (c) 2010 Cykod LLC
