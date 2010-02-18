@@ -14,7 +14,7 @@ class Book::ManageController < ModuleController
    hdr(:string,:version_type, :label => 'Type'),:created_at]
   
   active_table :bulkview_table, BookPage, 
-  [:check,:published,:name,hdr(:string,:description,:label => 'Page Description'),:created_at, :parent_id]
+  [:check, :published,:parent_id,:name,hdr(:string,:description,:label => 'Page Description'),:created_at]
   
   def book
     @book = BookBook.find_by_id(params[:path][0]) || BookBook.new
@@ -210,27 +210,47 @@ class Book::ManageController < ModuleController
   end
   
   def view_wiki_edits
-    
     @wiki_body = BookPageVersion.find_by_id(params[:path])
     render :partial => 'view_edits'
   end
   def add_subpages_form
+    @book =  BookBook.find(params[:path][0])
 
-    render :partial => 'add_subpages_form'
+    if params[:page_ids]
+      @pages = @book.book_pages.find(params[:page_ids])
+      render :partial => 'add_subpages_form'
+      
+    else 
+      @new_pages = params[:new_page][:page_names]
+      @new_pages.each do |subs|  
+        @parent = @book.book_pages.find(subs[0])
+        subs[1].split("\n").map(&:strip).reject(&:blank?).each do |sub|
+          @new_page = @book.book_pages.create(:name => sub)
+          
+          @new_page.move_to_child_of(@parent)
+         
+        end    
+      end
+      @tbl = bulkview_table_generate( params,
+                                 :conditions => ['book_book_id = ? and name != ?',@book.id,'Root'])
+    end
   end
   def edit_meta_form 
     @book = BookBook.find(params[:path][0])
-    @page = @book.book_pages.find_by_id(params[:page_id])
     
-    render :partial => 'edit_meta_form'
+    if params[:update_page]
+      @page = @book.book_pages.find(params[:update_page].delete(:id))
+      @page.update_attributes(params[:update_page])
+      
+      @tbl = bulkview_table_generate( params,
+                                      :conditions => ['book_book_id = ? and name != ?',@book.id,'Root'])    
+    else 
+      @page = @book.book_pages.find(params[:page_id])
+      render :partial => 'edit_meta_form'
+      
+    end
     
-  end
-  
-  def save_meta
-    #    raise params.inspect
-    @book =  BookBook.find(params[:path][0])
-    @page = @book.book_pages.find_by_id(params[:page_id])   
-  end
+  end 
   def bulk_edit
     @book ||= BookBook.find(params[:path][0])
 
@@ -244,15 +264,13 @@ class Book::ManageController < ModuleController
     
     active_table_action('bulkview') do |act,pids|
       case act
-      when 'add subpages': BookPage.find(pids).each { |uv|  uv.update_attribute(:published, true ) }
       when 'publish': BookPage.find(pids).each { |uv|  uv.update_attribute(:published, true ) }
       when 'unpublish': BookPage.find(pids).each { |uv|  uv.update_attribute(:published, false ) }
       when 'delete': BookPage.destroy(pids) 
       end 
     end  
     
-    @tbl = bulkview_table_generate( params,
-                                    :conditions => ['book_book_id = ? and name != ?',@book.id,'Root'])
+    @tbl = bulkview_table_generate( params, :order => 'lft',:conditions => ['book_book_id = ? and name != ?',@book.id,'Root'])
     render :partial => 'bulkview_table' if display
     
   end

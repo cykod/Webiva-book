@@ -253,19 +253,76 @@ describe Book::ManageController do
       @ver.body.should == ' isnt this funner'
       @ver.id.should == @version.id
 
+    end
+  end
+  describe 'bulk editing' do
+     before(:each) do 
+      mock_editor
 
+      def random_string(size=12)
+        (1..size).collect { (i = Kernel.rand(62); i += ((i < 10) ? 48 : ((i < 36) ? 55 : 61 ))).chr }.join
+      end
+      @rand_name = random_string
+
+      @chapterbook = BookBook.create(:name => 'chapter book')
+      @page1 = @chapterbook.book_pages.create(:name => 'chapter one' )
+      @page1.move_to_child_of(@chapterbook.root_node)
+      @page2 = @chapterbook.book_pages.create(:name => 'chapter two' )
+      @page2.move_to_child_of(@chapterbook.root_node)
+      @page3 = @chapterbook.book_pages.create(:name => 'chapter three')
+      @page3.move_to_child_of(@chapterbook.root_node)
+      @page4 = @chapterbook.book_pages.create(:name => 'chapter four' )
+      @page4.move_to_child_of(@chapterbook.root_node)
+      @page5 = @chapterbook.book_pages.create(:name => 'chapter five' )
+      @page5.move_to_child_of(@chapterbook.root_node)
+    end
+  
+    
+    it 'should create and perform actions on an active table' do
+      controller.should handle_active_table(:bulkview_table) do |args|
+        args[:path] = [@chapterbook.id]
+        post 'display_bulkview_table', args
+      end
+    end
+
+
+    it 'should render a form for a list of page ids' do
+      
+      post('add_subpages_form',:page_ids => ["3", "6"], :path => [@chapterbook.id]) 
+      response.should render_template('book/manage/_add_subpages_form')
 
     end
-      
     
+    it 'should add new subpages to page2 and page5' do
+      post('add_subpages_form', :new_page => {:page_names =>{'3' => "onepage", '6' => "twopage"}}, :path => [@chapterbook.id])
+      @subpage = @chapterbook.book_pages.find_by_name('onepage')
+      @subpage.id.should == 8
+      @subpage.parent_id.should == 3
+    end
+    it 'should add render the meta data form' do
+      post('edit_meta_form', :path=>[@chapterbook.id],:page_id =>["3"])
+      response.should render_template('book/manage/_edit_meta_form')
+    end
+    it 'should update meta data to page1' do
+      post('edit_meta_form', :path=>[@chapterbook.id], :update_page=>{:reference=>"reference", :name=> "change name", :id => @page1.id, :description=>"descrip"}  )
+      @meta_update = @chapterbook.book_pages.find_by_id(@page1.id)
+      @meta_update.name.should == 'change name'
+      response.should render_template('book/manage/edit_meta_form.rjs')
+    end
   end
+  
+  
+  
+  
+  
+end
 
 
   
 
 
 
-end
+
 
 
 

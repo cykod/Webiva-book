@@ -2,14 +2,13 @@
 <h3>Add Subpages to Each of the Selected Pages</h3>
 <br/>
 
-        <% admin_form_for :page ,nil, :html => {:onsubmit => 'Pages.addSubsSubmit(this); return false;' } do |f| %>
+        <% admin_form_for :new_page ,nil, :html => {:onsubmit => 'Pages.addSubsSubmit(this); return false;' } do |f| %>
 One page per line
-
-
-<%   params[:page_ids].each do |pg| %>
-      <%=  f.text_field :page_names, :label => "#{pg}", :name => #{pg}, :vertical => true %>
-<%  end %>
+<%  @pages.each do |pg| %>
+      <%= f.text_area "page_names[#{pg.id}]", :label => "#{pg.name}", :rows => 5, :vertical => true %>
+<% end %>
       <%= f.cancel_submit_buttons 'Cancel', 'Submit', {:onclick=>'RedBox.close(); return false;'} %>
+      
 <% end %>
 
 
