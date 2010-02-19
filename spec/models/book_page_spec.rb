@@ -57,7 +57,33 @@ EOF
     @page.body_html.should == markdown_html
   end
   
+    it "should create proper page links" do
+    markdown_sample = <<EOF  
+
+Link One : [[yes title]](linktext)  
   
+Link Two : [[no title]]
+EOF
+
+    markdown_html = <<EOF.strip
+
+<p>Link One : <a href='linktext'>yes title</a></p>
+
+<p>Link Two : <a href='no-title'>no title</a></p>
+EOF
+
+    @book = BookBook.create(:name => 'book',
+                            :content_filter => 'markdown')
+
+    
+    
+    @page = @book.book_pages.create(:name => 'Test Page',
+                                    :body => markdown_sample)
+
+    @page.move_to_child_of(@book.root_node)
+
+    @page.body_html.should == markdown_html
+  end
   
   
   
