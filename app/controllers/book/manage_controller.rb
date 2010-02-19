@@ -13,8 +13,7 @@ class Book::ManageController < ModuleController
   [:check,:id,:created_by_id,hdr(:string, :version_status, :label => 'Status'),
    hdr(:string,:version_type, :label => 'Type'),:created_at]
   
-  active_table :bulkview_table, BookPage, 
-  [:check, :published,:parent_id,:name,hdr(:string,:description,:label => 'Page Description'),:created_at]
+  
   
   def book
     @book = BookBook.find_by_id(params[:path][0]) || BookBook.new
@@ -250,8 +249,12 @@ class Book::ManageController < ModuleController
       
     end
     
-  end 
+  end
+  active_table :bulkview_table, BookPage, 
+  [:check, hdr(:boolean, :published, :label => 'P'),hdr(:order,:lft, :label => 'Parent'),:name,hdr(:string,:description,:label => 'Page Description'),:created_at]
+  
   def bulk_edit
+
     @book ||= BookBook.find(params[:path][0])
 
     cms_page_path ['Content'], [ 'Bulk Edit Pages in %s',nil,@book.name ]
