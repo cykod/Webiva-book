@@ -15,25 +15,25 @@ describe Book::ManageController do
       end
       @rand_name = random_string
 
-      @chapterbook = BookBook.create(:name => 'chapter book')
-      @page1 = @chapterbook.book_pages.create(:name => 'chapter one' )
-      @page1.move_to_child_of(@chapterbook.root_node)
-      @page2 = @chapterbook.book_pages.create(:name => 'chapter two' )
-      @page2.move_to_child_of(@chapterbook.root_node)
-      @page3 = @chapterbook.book_pages.create(:name => 'chapter three')
-      @page3.move_to_child_of(@chapterbook.root_node)
-      @page4 = @chapterbook.book_pages.create(:name => 'chapter four' )
-      @page4.move_to_child_of(@chapterbook.root_node)
-      @page5 = @chapterbook.book_pages.create(:name => 'chapter five' )
-      @page5.move_to_child_of(@chapterbook.root_node)
+      @cb = BookBook.create(:name => 'chapter book')
+      @page1 = @cb.book_pages.create(:name => 'chapter one' )
+      @page1.move_to_child_of(@cb.root_node)
+      @page2 = @cb.book_pages.create(:name => 'chapter two' )
+      @page2.move_to_child_of(@cb.root_node)
+      @page3 = @cb.book_pages.create(:name => 'chapter three')
+      @page3.move_to_child_of(@cb.root_node)
+      @page4 = @cb.book_pages.create(:name => 'chapter four' )
+      @page4.move_to_child_of(@cb.root_node)
+      @page5 = @cb.book_pages.create(:name => 'chapter five' )
+      @page5.move_to_child_of(@cb.root_node)
     end
     
     
     
     it 'should create a new sub page of @page1' do 
       assert_difference 'BookPage.count', 1 do
-        post( 'add_to_tree', :path => [@chapterbook.id], :page_id => @page1.id)
-        @subpage = @chapterbook.book_pages.find(:first, :order => 'id desc')
+        post( 'add_to_tree', :path => [@cb.id], :page_id => @page1.id)
+        @subpage = @cb.book_pages.find(:first, :order => 'id desc')
         @subpage.should_not be_nil
         @subpage.parent_id.should == @page1.id
         
@@ -42,74 +42,72 @@ describe Book::ManageController do
     
     it 'should add a page above @page4' do 
       assert_difference 'BookPage.count', 1 do
-        post( 'add_to_tree', :path => [@chapterbook.id], :page_id => @page4.id, :position => 'top')
-        @adjpage = @chapterbook.book_pages.find(:first, :order => 'id desc')
+        post( 'add_to_tree', :path => [@cb.id], :page_id => @page4.id, :position => 'top')
+        @adjpage = @cb.book_pages.find(:first, :order => 'id desc')
         @adjpage.should_not be_nil
-        @adjpage.parent_id.should == @chapterbook.root_node.id
+        @adjpage.parent_id.should == @cb.root_node.id
         @adjpage.lft.should == 8
       end
     end
     it 'should add a page below @page4' do 
       assert_difference 'BookPage.count', 1 do
-        post( 'add_to_tree', :path => [@chapterbook.id], :page_id => @page4.id, :position => 'bottom')
-        @adjpage = @chapterbook.book_pages.find(:first, :order => 'id desc')
+        post( 'add_to_tree', :path => [@cb.id], :page_id => @page4.id, :position => 'bottom')
+        @adjpage = @cb.book_pages.find(:first, :order => 'id desc')
         @adjpage.should_not be_nil
         @adjpage.lft.should == 10
-        @adjpage.parent_id.should == @chapterbook.root_node.id
+        @adjpage.parent_id.should == @cb.root_node.id
       end
     end
 
 
 
     it 'should move page4 from position4 to position 1' do
-      post( 'update_tree', :path => [@chapterbook.id],  :chapter_tree => {@page4.id => {:left_id => '', :parent_id => '1'}})
-      @subpage = @chapterbook.book_pages.find_by_id(@page4.id)
+      post( 'update_tree', :path => [@cb.id],  :chapter_tree => {@page4.id => {:left_id => '', :parent_id => '1'}})
+      @subpage = @cb.book_pages.find_by_id(@page4.id)
       @subpage.lft.should == 2
     end
     
 
     it 'should be able to delete page4 in the book' do
-      post( 'delete_page', :path => [@chapterbook.id], :page_id => @page4.id);
-      @doesexist = @chapterbook.book_pages.find_by_id(@page4.id)
+      post( 'delete_page', :path => [@cb.id], :page_id => @page4.id);
+      @doesexist = @cb.book_pages.find_by_id(@page4.id)
       @doesexist.should be_nil
     end
 
     
     it 'should be able to rename pages' do
-      post( 'save_page', :path => [@chapterbook.id], :page_id => @page4.id, :page => {:name => 'no longer page 4'} )
-      @page4namechange = @chapterbook.book_pages.find(@page4.id)
+      post( 'save_page', :path => [@cb.id], :page_id => @page4.id, :page => {:name => 'no longer page 4'} )
+      @page4namechange = @cb.book_pages.find(@page4.id)
       @page4namechange.name.should == 'no longer page 4'
     end
 
     it 'should be able to preview pages' do
-      BookBook.should_receive( :find ).and_return(@chapterbook)
+      BookBook.should_receive( :find ).and_return(@cb)
       book_pages = mock('book1')
       
       book_pages.should_receive( :find ).with( @page4.id.to_s ).and_return(@page4)
-      @chapterbook.should_receive( :book_pages ).and_return(book_pages)
+      @cb.should_receive( :book_pages ).and_return(book_pages)
       
-      post( 'preview_page', :path => [@chapterbook.id], :page_id => @page4.id, :page => {:body => 
+      post( 'preview_page', :path => [@cb.id], :page_id => @page4.id, :page => {:body => 
               "preview fun markdown\n===================="} )
       @page4.body_html.should == "<h1 id='preview_fun_markdown'>preview fun markdown</h1>"
     end
 
     it 'should be able to delete the book' do
-      post('delete', :path => [@chapterbook.id], :kill => 'Destroy Book', :destroy => 'yes')
+      post('delete', :path => [@cb.id], :kill => 'Destroy Book', :destroy => 'yes')
 
-#      @doesexist = BookBook.find_by_id(@chapterbook.id)
+#      @doesexist = BookBook.find_by_id(@cb.id)
  #     @doesexist.should be_nil
     end
 
 
     it 'should create default page if one does not exist' do
       post('book', :path => '', :action => 'book', :commit => 'Submit', :book => { :book_type => 'chapter',:url_scheme => 'flat', :name => 'Books should have default page'})
-      # raise @blank_chapter_book.id.inspect
 
       @blank_chapter_book = BookBook.find_by_name('Books should have default page')
 
       post('edit', :path => [@blank_chapter_book.id])
       @defaultpage = @blank_chapter_book.book_pages.find(:last, :order => 'id asc')
-      # raise @defaultpage.inspect
       @defaultpage.name.should == 'Default Page'
       @defaultpage.id.should == 8
     end
@@ -198,26 +196,26 @@ describe Book::ManageController do
       end
       @rand_name = random_string
 
-      @chapterbook = BookBook.create(:name => 'chapter book')
-      @page1 = @chapterbook.book_pages.create(:name => 'chapter one' )
-      @page1.move_to_child_of(@chapterbook.root_node)
-      @page2 = @chapterbook.book_pages.create(:name => 'chapter two' )
-      @page2.move_to_child_of(@chapterbook.root_node)
+      @cb = BookBook.create(:name => 'chapter book')
+      @page1 = @cb.book_pages.create(:name => 'chapter one' )
+      @page1.move_to_child_of(@cb.root_node)
+      @page2 = @cb.book_pages.create(:name => 'chapter two' )
+      @page2.move_to_child_of(@cb.root_node)
 
     end
     
     it 'should create an autosave version' do
 
       post('save_draft', 
-           :path => [@chapterbook.id], 
+           :path => [@cb.id], 
            :page_id => @page1.id, 
            :page => {
              :name => @page1.name, 
-             :book_book_id => @chapterbook.id, 
+             :book_book_id => @cb.id, 
              :book_page_id => @page1.id, 
              :body => 'oh isnt this fun'} )
    
-      @version = @chapterbook.book_page_versions.find(:last, :order => 'updated_at', :conditions => {:version_status => 'draft' })
+      @version = @cb.book_page_versions.find(:last, :order => 'updated_at', :conditions => {:version_status => 'draft' })
 
       @version.id.should == 4
           
@@ -226,46 +224,121 @@ describe Book::ManageController do
  # it is important for the draft save not to add
  #  a new record on save, it should update the existing record
        post('save_draft', 
-           :path => [@chapterbook.id], 
+           :path => [@cb.id], 
            :page_id => @page1.id, 
            :page => {
              :name => @page1.name, 
-             :book_book_id => @chapterbook.id, 
+             :book_book_id => @cb.id, 
              :book_page_id => @page1.id, 
              :body => ' isnt this fun'} )
 
-      @version = @chapterbook.book_page_versions.find(:last, :order => 'updated_at', :conditions => {:version_status => 'draft' })
+      @version = @cb.book_page_versions.find(:last, :order => 'updated_at', :conditions => {:version_status => 'draft' })
       
       @version.id.should == 4
 
 
       post('save_draft', 
-           :path => [@chapterbook.id], 
+           :path => [@cb.id], 
            :page_id => @page1.id, 
            :version_id => @version.id,
            :page => {
              :name => @page1.name, 
-             :book_book_id => @chapterbook.id, 
+             :book_book_id => @cb.id, 
              :book_page_id => @page1.id, 
              :body => ' isnt this funner'} )
       
-      @ver = @chapterbook.book_page_versions.find_by_id(@version.id)
+      @ver = @cb.book_page_versions.find_by_id(@version.id)
       @ver.body.should == ' isnt this funner'
       @ver.id.should == @version.id
 
+    end
+  end
+  describe 'bulk editing' do
+     before(:each) do 
+      mock_editor
 
+      def random_string(size=12)
+        (1..size).collect { (i = Kernel.rand(62); i += ((i < 10) ? 48 : ((i < 36) ? 55 : 61 ))).chr }.join
+      end
+      @rand_name = random_string
+
+      @cb = BookBook.create(:name => 'chapter book')
+      @page1 = @cb.book_pages.create(:name => 'chapter one' )
+      @page1.move_to_child_of(@cb.root_node)
+      @page2 = @cb.book_pages.create(:name => 'chapter two' )
+      @page2.move_to_child_of(@cb.root_node)
+      @page3 = @cb.book_pages.create(:name => 'chapter three')
+      @page3.move_to_child_of(@cb.root_node)
+      @page4 = @cb.book_pages.create(:name => 'chapter four' )
+      @page4.move_to_child_of(@cb.root_node)
+      @page5 = @cb.book_pages.create(:name => 'chapter five' )
+      @page5.move_to_child_of(@cb.root_node)
+    end
+  
+    
+    it 'should create and perform actions on an active table' do
+      
+      controller.should handle_active_table(:bulkview_table) do |args|
+        args ||= {}
+        args[:path] = [@cb.id]
+        post 'display_bulkview_table', args
+      end
+    end
+    
+    it 'should delete a page in the bulkview_table' do
+      post 'display_bulkview_table', :path => [@cb.id], :table_action => 'delete', :bulkview => {@page2.id => @page2.id}
+      @pg_count = @cb.book_pages.find(:all).count
+      @pg_count.should == 5;
+    end
+    
+    it 'should publish a page in the bulkview_table' do
+      post 'display_bulkview_table', :path => [@cb.id], :table_action => 'publish', :bulkview => {@page2.id => @page2.id}
+      @pg = @cb.book_pages.find(@page2.id)
+      @pg.published.should be true;
+    end
+    it 'should unpublish a page in the bulkview_table' do
+      post 'display_bulkview_table', :path => [@cb.id], :table_action => 'unpublish', :bulkview => {@page2.id => @page2.id}
+      @pg = @cb.book_pages.find(@page2.id)
+      @pg.published.should be false;
 
     end
-      
     
+    it 'should render a form for a list of page ids' do      
+      post('add_subpages_form',:page_ids => ["3", "6"], :path => [@cb.id]) 
+      response.should render_template('book/manage/_add_subpages_form')
+      
+    end
+    
+    it 'should add new subpages to page2 and page5' do
+      post('add_subpages_form', :new_page => {:page_names =>{'3' => "onepage", '6' => "twopage"}}, :path => [@cb.id])
+      @subpage = @cb.book_pages.find_by_name('onepage')
+      @subpage.id.should == 8
+      @subpage.parent_id.should == 3
+    end
+    it 'should  render the meta data form' do
+      post('edit_meta_form', :path=>[@cb.id],:page_id =>["3"])
+      response.should render_template('book/manage/_edit_meta_form')
+    end
+    it 'should update meta data to page1' do
+      post('edit_meta_form', :path=>[@cb.id], :update_page=>{:reference=>"reference", :name=> "change name", :id => @page1.id, :description=>"descrip"}  )
+      @meta_update = @cb.book_pages.find_by_id(@page1.id)
+      @meta_update.name.should == 'change name'
+      response.should render_template('book/manage/edit_meta_form.rjs')
+    end
   end
+  
+  
+  
+  
+  
+end
 
 
   
 
 
 
-end
+
 
 
 

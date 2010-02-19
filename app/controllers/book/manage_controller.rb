@@ -13,6 +13,8 @@ class Book::ManageController < ModuleController
   [:check,:id,:created_by_id,hdr(:string, :version_status, :label => 'Status'),
    hdr(:string,:version_type, :label => 'Type'),:created_at]
   
+  
+  
   def book
     @book = BookBook.find_by_id(params[:path][0]) || BookBook.new
     
@@ -43,8 +45,6 @@ class Book::ManageController < ModuleController
 
   def edit
 
-
-    
     @book = BookBook.find(params[:path][0])
 
     if params[:path][1]
@@ -52,7 +52,7 @@ class Book::ManageController < ModuleController
     end
 
     @chapters = @book.nested_pages
-   
+    
     if @chapters.length == 0 && @book.book_type == 'chapter'
       @page = @book.book_pages.create(:name => 'Default Page',:created_by_id => myself.id)
       @page.move_to_child_of(@book.root_node)
@@ -66,13 +66,6 @@ class Book::ManageController < ModuleController
     
 
   end
-  
-  # def create_pdf
-  #   @book = BookBook.find(params[:path][0])
-    
-  #   ## later
-
-  # end
   
   def update_tree
     @book = BookBook.find(params[:path][0])
@@ -143,7 +136,7 @@ class Book::ManageController < ModuleController
   
   def save_draft
     @book = BookBook.find(params[:path][0])
-     
+    
     @page = @book.book_pages.find(params[:page_id])
     if !params[:version_id].blank?
       @version = @page.book_page_versions.find_by_id(params[:version_id])  
@@ -227,16 +220,7 @@ class Book::ManageController < ModuleController
     @deleted=true
 
     @chapters = @book.nested_pages
-  end
-  
-
-  def search
-    @book =  BookBook.find(params[:path][0])
-
-    @pages = @book.book_pages.find(:all,:conditions => [ 'name LIKE ?',"%#{params[:search]}%" ],:order => 'name')
-
-  end
-  
+  end 
   def delete
     @book =  BookBook.find(params[:path][0])
     cms_page_path ['Content'],['Delete %s',nil,@book.name ] 
@@ -247,24 +231,24 @@ class Book::ManageController < ModuleController
     end
     
   end
- 
+  
   def auto_save
     if params[:autosave]
       @page.book_pages.save_version
     end  
   end
-    
+  
   def display_version_table(display=true)
     @book ||= BookBook.find(params[:path][0])
     @page ||= @book.book_pages.find_by_id(params[:page_id])
     
-      active_table_action('version') do |act,pids|
-        case act
-        when 'delete': BookPageVersion.destroy(pids)
-        when 'reviewed': BookPageVersion.find(pids).each { |uv|  uv.update_attribute(:version_status, 'reviewed' ) }
-        end 
-      end  
-      
+    active_table_action('version') do |act,pids|
+      case act
+      when 'delete': BookPageVersion.destroy(pids)
+      when 'reviewed': BookPageVersion.find(pids).each { |uv|  uv.update_attribute(:version_status, 'reviewed' ) }
+      end 
+    end  
+    
     @tbl = version_table_generate( params,
                                    :order => 'created_at DESC',
                                    :conditions => ['book_page_id = ?',@page.id])
@@ -274,9 +258,73 @@ class Book::ManageController < ModuleController
   end
   
   def view_wiki_edits
-    
     @wiki_body = BookPageVersion.find_by_id(params[:path])
     render :partial => 'view_edits'
+  end
+  def add_subpages_form
+    @book =  BookBook.find(params[:path][0])
+
+    if params[:page_ids]
+      @pages = @book.book_pages.find(params[:page_ids])
+      render :partial => 'add_subpages_form'
+      
+    else 
+      @new_pages = params[:new_page][:page_names]
+      @new_pages.each do |subs|  
+        @parent = @book.book_pages.find(subs[0])
+        subs[1].split("\n").map(&:strip).reject(&:blank?).each do |sub|
+          @new_page = @book.book_pages.create(:name => sub)
+          
+          @new_page.move_to_child_of(@parent)
+         
+        end    
+      end
+      @tbl = bulkview_table_generate( params,
+                                 :conditions => ['book_book_id = ? and name != ?',@book.id,'Root'])
+    end
+  end
+  def edit_meta_form 
+    @book = BookBook.find(params[:path][0])
+    
+    if params[:update_page]
+      @page = @book.book_pages.find(params[:update_page].delete(:id))
+      @page.update_attributes(params[:update_page])
+      
+      @tbl = bulkview_table_generate( params,
+                                      :conditions => ['book_book_id = ? and name != ?',@book.id,'Root'])    
+    else 
+      @page = @book.book_pages.find(params[:page_id])
+      render :partial => 'edit_meta_form'
+      
+    end
+    
+  end
+  active_table :bulkview_table, BookPage, 
+  [:check, hdr(:boolean, :published, :label => 'P'),hdr(:order,:lft, :label => 'Parent'),:name,hdr(:string,:description,:label => 'Page Description'),:created_at]
+  
+  def bulk_edit
+
+    @book ||= BookBook.find(params[:path][0])
+
+    cms_page_path ['Content'], [ 'Bulk Edit Pages in %s',nil,@book.name ]
+
+    display_bulkview_table(display)
+    
+  end
+  def display_bulkview_table(display=true)
+    @book ||= BookBook.find(params[:path][0])
+    
+    active_table_action('bulkview') do |act,pids|
+      case act
+      when 'publish': BookPage.find(pids).each { |uv|  uv.update_attribute(:published, true ) }
+      when 'unpublish': BookPage.find(pids).each { |uv|  uv.update_attribute(:published, false ) }
+      when 'delete': BookPage.destroy(pids) 
+      end 
+    end  
+    
+    @tbl = bulkview_table_generate( params, :order => 'lft',:conditions => ['book_book_id = ? and name != ?',@book.id,'Root'])
+    render :partial => 'bulkview_table' if display
+    
   end
   
   protected
@@ -305,5 +353,5 @@ class Book::ManageController < ModuleController
       end
     end
   end
-   
+  
 end

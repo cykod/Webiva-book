@@ -1,0 +1,25 @@
+
+if @updated
+  if @book.book_type == 'flat'
+    page.replace 'tree_content', :partial => 'edit_flat'
+  else 
+    page << "ChapterTree.updateTitle(#{@page.id},'#{jh(render(:partial => 'chapter', :locals => { :chapter => @page }))}');"
+  end
+
+
+  
+  if @new_page
+    page.replace_html 'element_info', :partial => 'page'
+  end
+
+  page.replace_html :save_notice, DateTime.now.strftime("Saved  %A, %I:%M:%S%p")
+
+  if @save_error
+    page.replace_html :edit_page_form, :partial => 'page_edit_form'
+  end
+ 
+else
+ page.replace_html :edit_page_form, :partial => 'page_edit_form'
+
+ page.replace_html :save_notice, '<span class="error">Error Saving</span>'
+end

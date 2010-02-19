@@ -1,0 +1,26 @@
+<% active_table_for :bulkview_table, @tbl, :refresh_url => url_for(:action => 'display_bulkview_table', :path => @book.id), 
+:actions => [ ['Publish','publish','Are you sure you want to change pages publication status?'], 
+              ['Unpublish','unpublish','Are you sure you want to change pages publication status?'], 
+              ['Delete','delete','Are you sure you want to delete these edits?'],
+              ['Add Subpages','js',"Pages.addSubs();"]] do |t| -%>
+
+
+
+   <% active_tr 'bulkview', t.id do |tr| %>
+   <td><%= tr.checkbox %></td>
+
+   <% if t.published %>
+   <td>*</td>
+    <% else %>
+   <td> </td>
+   <% end %>
+    <td><%= h t.parent.name %></td>
+
+    <td><%= link_to h(t.name), 'javascript:void(0);', :onclick => "Pages.editMeta(#{t.id});" %>
+
+    <td><%= h t.description %></td>
+    <td><%= h t.created_at.localize(DEFAULT_DATETIME_FORMAT) %></td>
+
+   <% end -%>
+  <% end -%>
+
