@@ -1,0 +1,45 @@
+
+
+<div id='folder_action_area'>
+
+  <div class='action_area_content' id='files_upload_area'  style='float:left;' >
+   <div id='upload_progress' style='display:none;' >
+        
+    </div>
+    <div id='upload_action'>
+  
+    <iframe id="UploadTarget" name="UploadTarget" src="" style="width:0px;height:0px;border:0"></iframe>
+    <%= form_tag({:action => 'upload'}, :onsubmit => "this.target = 'UploadTarget'; FileEditor.startUpload(this); FileEditor.hideDetails(); return true;", :enctype => 'multipart/form-data') %>
+        <%= theme_image_tag('framework/filemanager_upload_file.gif') -%>    
+        <%= "Upload New File:".t %>
+            <input type='hidden' name='X-Progress-ID' id='upload_identifier' value=''/>
+            <input type='hidden' id='upload_file_parent_id' name='upload_file[parent_id]' value='<%= @folder.id %>'/>
+            <%= file_field 'upload_file','filename', :id => 'file_column', :onchange => 'FileEditor.selectedChange();' %>
+            <%= submit_tag "Upload".t, :id => 'upload_button' %>
+            <label for='replace_same'><input type='checkbox' name='replace_same' id='replace_same' checked='checked'/><%= "Replace matching files".t %></label>
+            <div id='upload_status_area'>
+                  
+            </div>
+            <script>
+              $('file_column').value = '';
+              $('upload_button').disabled = true;
+            </script>
+    <span id='upload_extra' style='display:none;'>
+            <label for='extract_archive'><input type='checkbox' name='extract_archive' id='extract_archive'/><%= "Extract Archived Files".t %></label>
+    </span>
+
+    </form>
+
+    </div>
+  </div>
+  
+
+   <div class='action_area_content'  style='float:right'>
+     <a href='javascript:void(0);' onclick='FileEditor.selectSearch();'>
+       <%= theme_image_tag('framework/filemanager_search_files.gif') -%>
+             Search Files
+       </a>
+   </div>
+   <div style='float:right;'>
+      <%= theme_image_tag('framework/filemanager_search_separator.gif') -%>&nbsp;&nbsp;
+  </div>
