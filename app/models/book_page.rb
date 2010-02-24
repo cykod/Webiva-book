@@ -58,6 +58,7 @@ class BookPage < DomainModel
   end
 
  
+ 
   def full_title
     self.book_book.name.to_s + ": " + self.name.to_s
   end

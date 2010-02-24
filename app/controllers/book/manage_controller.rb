@@ -159,7 +159,7 @@ class Book::ManageController < ModuleController
     cms_page_path ['Content'], [ 'Export Pages in %s',nil,@book.name ]
     @export_options =  [[ 'CSV - Comma Separated Values', 'csv' ]
                        ]   
-    #    @export = DefaultsHashObject.new(:export_download => 'all', :export_format => 'csv')
+    @export = DefaultsHashObject.new(:export_download => 'all', :export_format => 'csv')
   end
   def generate_export
     @book = BookBook.find(params[:path][0])

@@ -129,4 +129,88 @@ class BookBook < DomainModel
     
     results
   end
+ def do_import(args) #:nodoc:
+   
+   results = { }
+   
+   
+   
+   results[:completed] = false
+
+   count = -1
+   CSV.open(args,"r",",").each do |row|
+     count += 1 if !row.join.blank?
+   end
+   count = 1 if count < 1
+   results[:entries] = count
+   
+   results[:initialized] = true
+   results[:imported] = 0
+   
+   
+   
+   
+   self.parse_csv(args) do |imported,errors|
+     results[:imported] += imported
+     Workling.return.set(args[:uid],results)
+   end
+ 
+ results[:completed] = true
+ Workling.return.set(self.id,results)
+ 
+  end
+ def check_header(f)     
+    reader = CSV.open(f, "r")
+    @header = reader.shift
+    @@fields = ["id","name","description","published","body","parent_id"]
+    if @header == @@fields
+      return true
+    else
+      return false
+    end
+  end
+
+ def parse_csv(args) 
+   @@fields = [:id,:name,:description,:published,:body,:parent_id]
+   reader = CSV.open(args,"r",",")
+   reader.shift
+   reader.each do |row|
+     attr = {}
+     @@fields.each_with_index { |field,idx| attr[field] = row[idx] }
+ 
+
+     @page = self.book_pages.find_by_id(attr[:id]) 
+     @page_name = self.book_pages.find_by_name(attr[:name]) 
+     @page_parent = self.book_pages.find_by_id(attr[:parent_id])
+
+     if @page
+       @page.update_attributes(attr.slice(:name,
+                                          :description,
+                                          :published,
+                                          :body
+                                          ))
+       @page.move_to_child_of(@page_parent) if @page_parent
+       
+     elsif @page_name
+       @page_name.update_attributes(attr.slice(
+                                               :description,
+                                               :published,
+                                               :body
+                                               ))
+       @page_name.move_to_child_of(@page_parent) if @page_parent
+       
+     else
+       @page = self.book_pages.new(attr.slice(:name,
+                                              :description,
+                                              :published,
+                                              :body))
+       @page.save
+       @page.move_to_child_of(@page_parent) if @page_parent
+       
+       
+     end
+     
+   end
+ end
+ 
 end
