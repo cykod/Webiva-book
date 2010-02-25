@@ -35,7 +35,7 @@
 </script>
 <div class='admin_content'>
 <% cms_form_for :export, @export, :html => { :onsubmit => 'Exporter.generate(); return false;', :id => 'export_form' } do |f| %>
-<%= f.radio_buttons :download, [ [ 'All Entries','all' ] ], :vertical => true, :separator => '<br/>' %>
+<%= f.radio_buttons :export_download, [ [ 'All Entries','all' ] ], :vertical => true, :separator => '<br/>' %>
 
 <%= f.radio_buttons :export_format , @export_options , :vertical => true, :separator => '<br/>', :label => 'Format of downloaded file' %>
 <tr>
