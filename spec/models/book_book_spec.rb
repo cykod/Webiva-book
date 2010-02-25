@@ -42,9 +42,9 @@ describe BookBook do
       
       @folder = DomainFile.create_folder("My Folder")
       @folder.save
-      fdata = fixture_file_upload("files/book-import.csv")
+      fdata = fixture_file_upload("../../vendor/modules/book/spec/fixtures/files/book-import.csv")
       @df = DomainFile.create(:filename => fdata,:parent_id => @folder.id)
-      fdata = fixture_file_upload("files/book-import2.csv")
+      fdata = fixture_file_upload("../../vendor/modules/book/spec/fixtures/files/book-import2.csv")
       @df2 = DomainFile.create(:filename => fdata,:parent_id => @folder.id)
     end
     
