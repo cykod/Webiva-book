@@ -40,6 +40,9 @@ class BookBook < DomainModel
   # @root_node ||= self.book_pages.find(:first,:order => 'name')
 
   end
+  def flat_book?
+    self.book_type == 'flat'
+  end
 
   def flat_url?
     self.url_scheme == 'flat'
@@ -180,8 +183,12 @@ class BookBook < DomainModel
  
 
      @page = self.book_pages.find_by_id(attr[:id]) 
-     @page_name = self.book_pages.find_by_name(attr[:name]) 
      @page_parent = self.book_pages.find_by_id(attr[:parent_id])
+     if @page_parent 
+       @page_name = self.book_pages.find_by_name_and_parent_id(attr[:name],@page_parent.id)
+     else
+       @page_name = self.book_pages.find_by_name(attr[:name])
+     end
 
      if @page
        @page.update_attributes(attr.slice(:name,
@@ -189,7 +196,7 @@ class BookBook < DomainModel
                                           :published,
                                           :body
                                           ))
-       @page.move_to_child_of(@page_parent) if @page_parent
+       @page.move_to_child_of(@page_parent || self.root_node) unless flat_book?
        
      elsif @page_name
        @page_name.update_attributes(attr.slice(
@@ -197,7 +204,7 @@ class BookBook < DomainModel
                                                :published,
                                                :body
                                                ))
-       @page_name.move_to_child_of(@page_parent) if @page_parent
+       @page_name.move_to_child_of(@page_parent || self.root_node) unless flat_book?
        
      else
        @page = self.book_pages.new(attr.slice(:name,
@@ -205,7 +212,7 @@ class BookBook < DomainModel
                                               :published,
                                               :body))
        @page.save
-       @page.move_to_child_of(@page_parent) if @page_parent
+       @page.move_to_child_of(@page_parent || self.root_node) unless flat_book?
        
        
      end
