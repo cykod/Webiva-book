@@ -41,6 +41,23 @@ class Book::ManageController < ModuleController
     
   end
 
+  def create
+    cms_page_info [ ["Content",url_for(:controller => '/content') ], "Create a new Book"], "content"
+    
+    @book = BookBook.new(params[:book] || { :add_to_site => true })
+    raise params.inspect
+    if(request.post? && params[:book])
+      if(@book.save)
+        if @book.add_to_site
+          redirect_to :controller => '/book/wizard', :book_id => @book.id
+          return
+        elsif  @book.add_to_site.blank?
+          redirect_to :controller => '/book/manage', :path => @book.id
+          return 
+        end
+      end
+    end
+  end
   def edit
 
 
@@ -52,7 +69,7 @@ class Book::ManageController < ModuleController
     end
 
     @chapters = @book.nested_pages
-   
+    
     if @chapters.length == 0 && @book.book_type == 'chapter'
       @page = @book.book_pages.create(:name => 'Default Page',:created_by_id => myself.id)
       @page.move_to_child_of(@book.root_node)
@@ -69,7 +86,7 @@ class Book::ManageController < ModuleController
   
   # def create_pdf
   #   @book = BookBook.find(params[:path][0])
-    
+  
   #   ## later
 
   # end
@@ -143,7 +160,7 @@ class Book::ManageController < ModuleController
   
   def save_draft
     @book = BookBook.find(params[:path][0])
-     
+    
     @page = @book.book_pages.find(params[:page_id])
     if !params[:version_id].blank?
       @version = @page.book_page_versions.find_by_id(params[:version_id])  
@@ -247,24 +264,24 @@ class Book::ManageController < ModuleController
     end
     
   end
- 
+  
   def auto_save
     if params[:autosave]
       @page.book_pages.save_version
     end  
   end
-    
+  
   def display_version_table(display=true)
     @book ||= BookBook.find(params[:path][0])
     @page ||= @book.book_pages.find_by_id(params[:page_id])
     
-      active_table_action('version') do |act,pids|
-        case act
-        when 'delete': BookPageVersion.destroy(pids)
-        when 'reviewed': BookPageVersion.find(pids).each { |uv|  uv.update_attribute(:version_status, 'reviewed' ) }
-        end 
-      end  
-      
+    active_table_action('version') do |act,pids|
+      case act
+      when 'delete': BookPageVersion.destroy(pids)
+      when 'reviewed': BookPageVersion.find(pids).each { |uv|  uv.update_attribute(:version_status, 'reviewed' ) }
+      end 
+    end  
+    
     @tbl = version_table_generate( params,
                                    :order => 'created_at DESC',
                                    :conditions => ['book_page_id = ?',@page.id])
@@ -305,5 +322,5 @@ class Book::ManageController < ModuleController
       end
     end
   end
-   
+  
 end

@@ -10,6 +10,7 @@ class BookBook < DomainModel
 
   after_create :create_root_node
 
+  attr_accessor :add_to_site
 
   has_options :book_type, [ [ 'Chapter Based', 'chapter'],
                             [ 'Flat','flat' ]
