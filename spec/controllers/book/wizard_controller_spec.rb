@@ -1,10 +1,10 @@
 # Copyright (C) 2010 Cykod LLC.
 
+require  File.expand_path(File.dirname(__FILE__)) + "/../../../../../../spec/spec_helper"
 
-require  File.expand_path(File.dirname(__FILE__)) + "/../../../../../spec/spec_helper"
 
 
-describe BookWizardController do
+describe Book::WizardController do
 
   before(:each) do
     @book = BookBook.new(:name => "Test Auto Create Book")
@@ -12,7 +12,7 @@ describe BookWizardController do
   
 
   it 'should redirect to main wizards form from index' do
-            post( 'index', :path => [], :controller => '/book/wizard')
+    post( 'index', :path => [], :controller => '/book/wizard')
     
   end
 

@@ -2,8 +2,6 @@
 
 class Book::WizardController < ModuleController
 
-
-
    permit 'book_config'
 
   component_info 'Book'
@@ -32,6 +30,7 @@ class Book::WizardController < ModuleController
         redirect_to :controller => '/structure'
       end
     end
+
   end
 
 end

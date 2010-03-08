@@ -14,8 +14,12 @@ class Book::ManageController < ModuleController
    hdr(:string,:version_type, :label => 'Type'),:created_at]
   
   def book
-    @book = BookBook.find_by_id(params[:path][0]) || BookBook.new
-    
+    if (params[:path][0] != nil) 
+
+      @book = BookBook.find_by_id(params[:path][0]) 
+    else 
+      @book = BookBook.new(params[:book] || { :add_to_site => true })
+    end
     cms_page_path ['Content'], @book.id ? [ "Configure %s",nil,@book.name ] : 'Create a book'
 
     if request.post? && params[:book]
@@ -24,8 +28,16 @@ class Book::ManageController < ModuleController
         if @new_book 
           @book.book_type = params[:book][:book_type]
           @book.url_scheme = params[:book][:url_scheme]
+          if(@book.save)
+            if @book.add_to_site
+              redirect_to :controller => '/book/wizard', :book_id => @book.id
+              return
+            elsif  @book.add_to_site.blank?
+              redirect_to :controller => '/book/manage', :path => @book.id
+              return 
+            end
+          end
         end
-
         if @book.update_attributes(params[:book])
           redirect_to :action => 'edit', :path => @book.id
         end
@@ -41,23 +53,7 @@ class Book::ManageController < ModuleController
     
   end
 
-  def create
-    cms_page_info [ ["Content",url_for(:controller => '/content') ], "Create a new Book"], "content"
-    
-    @book = BookBook.new(params[:book] || { :add_to_site => true })
-    raise params.inspect
-    if(request.post? && params[:book])
-      if(@book.save)
-        if @book.add_to_site
-          redirect_to :controller => '/book/wizard', :book_id => @book.id
-          return
-        elsif  @book.add_to_site.blank?
-          redirect_to :controller => '/book/manage', :path => @book.id
-          return 
-        end
-      end
-    end
-  end
+ 
   def edit
 
 
