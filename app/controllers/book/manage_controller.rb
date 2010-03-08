@@ -1,3 +1,4 @@
+# Copyright (C) 2010 Cykod LLC.
 
 
 class Book::ManageController < ModuleController

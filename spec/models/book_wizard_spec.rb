@@ -38,8 +38,7 @@ describe BookWizard do
                             :book_id => @book.id,
                             :add_to_id => root_node.id,
                             :add_to_subpage => 'book',
-                            :opts => ["chapters"], 
-                            :wiki => false
+                            :opts => ["chapters"]
 
                                   )
     wizard.add_to_site!
@@ -53,18 +52,17 @@ describe BookWizard do
                             :add_to_id => root_node.id,
                             :add_to_subpage => 'book',
                             :wiki_page_url => 'edit2',
-                            :opts => ["comments"],
-                            :wiki=> true
+                            :opts => ["","comments"]
                             )
     wizard.add_to_site!
     @bookpage = SiteNode.find_by_node_path('/book')
     @bookpage.should_not be_nil
-
+    
     para = @bookpage.page_revisions[0].page_paragraphs
     para[0].display_type.should == 'html'
     para[1].display_type.should == 'content'
+    para[2].display_type.should == 'comments'
 
-    SiteNode.find_by_node_path('/book/edit2').should_not be_nil
   end
   it 'should add a wiki to a book on the site' do
     root_node = SiteVersion.default.root_node.add_subpage('book-test')
@@ -74,7 +72,7 @@ describe BookWizard do
                             :add_to_id => root_node.id,
                             :add_to_subpage => 'book',
                             :wiki_page_url => 'edit2',
-                            :wiki => true
+                            :opts => ["wiki"]
 
                                   )
     wizard.add_to_site!

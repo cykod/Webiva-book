@@ -1,3 +1,4 @@
+# Copyright (C) 2010 Cykod LLC.
 
 class BookWizard < HashModel
 
@@ -14,7 +15,6 @@ class BookWizard < HashModel
   validates_presence_of :add_to_id
 
   validates_presence_of :book_id
-#  validates_presence_of :wiki_page_url if :opts["wiki"]#
 
   
   def validate
