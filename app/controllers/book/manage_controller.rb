@@ -1,3 +1,4 @@
+# Copyright (C) 2010 Cykod LLC.
 
 
 class Book::ManageController < ModuleController
@@ -16,8 +17,12 @@ class Book::ManageController < ModuleController
   
   
   def book
-    @book = BookBook.find_by_id(params[:path][0]) || BookBook.new
-    
+    if (params[:path][0] != nil) 
+
+      @book = BookBook.find_by_id(params[:path][0]) 
+    else 
+      @book = BookBook.new(params[:book] || { :add_to_site => true })
+    end
     cms_page_path ['Content'], @book.id ? [ "Configure %s",nil,@book.name ] : 'Create a book'
 
     if request.post? && params[:book]
@@ -26,8 +31,16 @@ class Book::ManageController < ModuleController
         if @new_book 
           @book.book_type = params[:book][:book_type]
           @book.url_scheme = params[:book][:url_scheme]
+          if(@book.save)
+            if @book.add_to_site
+              redirect_to :controller => '/book/wizard', :book_id => @book.id
+              return
+            elsif  @book.add_to_site.blank?
+              redirect_to :controller => '/book/manage', :path => @book.id
+              return 
+            end
+          end
         end
-
         if @book.update_attributes(params[:book])
           redirect_to :action => 'edit', :path => @book.id
         end
@@ -43,6 +56,7 @@ class Book::ManageController < ModuleController
     
   end
 
+ 
   def edit
 
     @book = BookBook.find(params[:path][0])
@@ -67,6 +81,16 @@ class Book::ManageController < ModuleController
 
   end
   
+<<<<<<< HEAD:app/controllers/book/manage_controller.rb
+=======
+  # def create_pdf
+  #   @book = BookBook.find(params[:path][0])
+  
+  #   ## later
+
+  # end
+  
+>>>>>>> origin/book-wizard:app/controllers/book/manage_controller.rb
   def update_tree
     @book = BookBook.find(params[:path][0])
 
