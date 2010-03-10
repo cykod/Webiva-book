@@ -81,8 +81,6 @@ class Book::ManageController < ModuleController
 
   end
   
-<<<<<<< HEAD:app/controllers/book/manage_controller.rb
-=======
   # def create_pdf
   #   @book = BookBook.find(params[:path][0])
   
@@ -90,7 +88,6 @@ class Book::ManageController < ModuleController
 
   # end
   
->>>>>>> origin/book-wizard:app/controllers/book/manage_controller.rb
   def update_tree
     @book = BookBook.find(params[:path][0])
 
