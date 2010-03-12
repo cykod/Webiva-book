@@ -11,7 +11,7 @@
     <% end %>
     <td><%= h t.version_status %></td>
     <td><%= h t.version_type %></td>
-    <td><%= link_to h(t.created_at.to_s:short),  { :path => [ t.id ], :action => "view_wiki_edits" }, :popup => ['new_window_name', 'height=300,width=600','scrollbars=1']%></td>
+    <td><%= link_to( h(t.created_at.to_s:short),  { :path => [ t.id ], :action => "view_wiki_edits" }, :popup => ['Revision Diff', 'height=600,width=810,scrollbars=yes'] )%></td>
 
    <% end -%>
   <% end -%>

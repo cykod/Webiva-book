@@ -132,6 +132,7 @@ class BookPage < DomainModel
                                    :name => self.name,
                                    :book_book_id => self.book_book_id,
                                    :body => version_body,
+                                   :body_diff => page_diff(version_body),                                   
                                    :created_by_id => user, 
                                    :version_status => v_status, 
                                    :version_type => v_type,
@@ -143,7 +144,46 @@ class BookPage < DomainModel
   end
   protected
   
-
+ 
+  def page_diff(version_body)
+    tmp_loc = File.join(Rails.root, "tmp")
+    max_lines = 9999999 
+    diff_header_length = 3
+    
+    page_body_old      = self.body
+    page_body_new      = version_body
+    
+    tmp_orig_body = File.join(tmp_loc,"file_old"+rand(1000000).to_s)
+    tmp_vers_body = File.join(tmp_loc,"file_new"+rand(1000000).to_s)
+    file_orig      = File.new(tmp_orig_body, "w+")
+    file_vers      = File.new(tmp_vers_body, "w+")
+    
+    file_orig.write(page_body_old+"\n")
+    file_vers.write(page_body_new+"\n")
+    file_orig.close
+    file_vers.close
+    lines = %x(diff --unified=#{max_lines} #{tmp_orig_body} #{tmp_vers_body})
+    if lines.empty?
+      lines = page_body_new.split(/\n/)
+    else
+      lines = lines.split(/\n/)[diff_header_length..max_lines].
+        collect do |i|
+        if i.empty?  
+          ""
+        else
+          case i[0,1]
+          when "+"; then "<div class='add'>"+i[1..i.length-1]+"</div>"
+          when "-"; then "<div class='rem'>"+i[1..i.length-1]+"</div>"
+          else; i[1..i.length-1]
+          end
+        end
+      end
+    end
+    File.delete(tmp_orig_body)
+    File.delete(tmp_vers_body)
+    lines.join("\n")
+    
+  end
 
   def create_url
     logger.warn('Create URL')
