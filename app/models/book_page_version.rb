@@ -10,7 +10,7 @@ class BookPageVersion < DomainModel
 
   validates_presence_of :book_book
 
-
+  serialize :body_diff
   
   def replace_page_links(code)
     cd = code.gsub(/\[\[([^\]]+)\]\](\(([^\)]+)\))?/) do |mtch|
@@ -25,7 +25,7 @@ class BookPageVersion < DomainModel
         "[#{titleinbrackets}](#{newlink})"
       end   
     end
-    cd
+    
   end
   
   

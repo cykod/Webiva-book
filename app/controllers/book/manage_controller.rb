@@ -2,7 +2,8 @@
 
 
 class Book::ManageController < ModuleController
-
+  helper 'book'
+  include BookHelper
   component_info 'Book'
   
   cms_admin_paths 'content',  "Versions" =>  {  :action => 'index'}
@@ -80,14 +81,7 @@ class Book::ManageController < ModuleController
     
 
   end
-  
-  # def create_pdf
-  #   @book = BookBook.find(params[:path][0])
-  
-  #   ## later
-
-  # end
-  
+   
   def update_tree
     @book = BookBook.find(params[:path][0])
 
@@ -106,7 +100,7 @@ class Book::ManageController < ModuleController
 
     @parent_page = @book.book_pages.find(params[:page_id])
 
-    @page = @book.book_pages.create(:name => 'New Page')
+    @page = @book.book_pages.create(:name => 'New Page', :created_by_id => myself.id)
 
     case params[:position]
     when 'top':
@@ -255,7 +249,8 @@ class Book::ManageController < ModuleController
   
   def auto_save
     if params[:autosave]
-      @page.book_pages.save_version
+      raise myself.inspect
+      @page.book_pages.save_version(myself, params[:page][:body], 'page', 'draft', @ipaddress)
     end  
   end
   
@@ -280,6 +275,9 @@ class Book::ManageController < ModuleController
   
   def view_wiki_edits
     @wiki_body = BookPageVersion.find_by_id(params[:path])
+    @escaped_body = pre_escape(@wiki_body.body_diff) 
+    
+    @diff_body = output_diff_pretty(@escaped_body)
     render :partial => 'view_edits'
   end
   def add_subpages_form

@@ -128,61 +128,74 @@ class BookPage < DomainModel
   end
 
   def save_version(user,version_body,v_type,v_status,ipaddress)
-    self.book_page_versions.create(
+  #  raise user.inspect
+    self.book_page_versions.new(
                                    :name => self.name,
                                    :book_book_id => self.book_book_id,
                                    :body => version_body,
-                                   :body_diff => page_diff(version_body),                                   
-                                   :created_by_id => user, 
+                                   :body_diff => page_diff(version_body),
+                                   :created_by_id => user.id, 
                                    :version_status => v_status, 
                                    :version_type => v_type,
                                    :ipaddress => ipaddress)
   end
   
   def auto_save_version
-    save_version(editor,self.body,edit_type||'editor',v_status||'auto',remote_ip)
+ #   raise editor.inspect
+    save_version(self,self.body,edit_type||'editor',v_status||'auto',remote_ip)
   end
   protected
   
  
   def page_diff(version_body)
-    tmp_loc = File.join(Rails.root, "tmp")
+    version_body = version_body.to_s
+    tmstmp = Time.now.strftime("%Y%m%d%H%M%S")
+    tmp_loc = File.join(Rails.root, "tmp/export")
     max_lines = 9999999 
     diff_header_length = 3
     
     page_body_old      = self.body
-    page_body_new      = version_body
+    if version_body.blank?
+      page_body_new = ""
+    else
+      page_body_new      = version_body.gsub(/\r\n/,"\n")
+    end
+
     
-    tmp_orig_body = File.join(tmp_loc,"file_old"+rand(1000000).to_s)
-    tmp_vers_body = File.join(tmp_loc,"file_new"+rand(1000000).to_s)
-    file_orig      = File.new(tmp_orig_body, "w+")
+    tmp_orig_body = File.join(tmp_loc,"page_body_old-#{tmstmp}".to_s)
+    tmp_vers_body = File.join(tmp_loc,"page_body_new-#{tmstmp}".to_s)
+
+    file_orig      = File.new(tmp_orig_body, "w+") 
     file_vers      = File.new(tmp_vers_body, "w+")
-    
-    file_orig.write(page_body_old+"\n")
-    file_vers.write(page_body_new+"\n")
+
+    file_orig.write("#{page_body_old}\n") 
+    file_vers.write("#{page_body_new}\n")
+
+
     file_orig.close
     file_vers.close
     lines = %x(diff --unified=#{max_lines} #{tmp_orig_body} #{tmp_vers_body})
-    if lines.empty?
-      lines = page_body_new.split(/\n/)
-    else
-      lines = lines.split(/\n/)[diff_header_length..max_lines].
-        collect do |i|
-        if i.empty?  
-          ""
+
+     if lines.empty?
+       lines = page_body_new.split(/\n/)
+     else
+       
+       lines = lines.split(/\n/)[diff_header_length..max_lines].
+         collect do |i|
+        if i == nil
+          i = nil
         else
           case i[0,1]
-          when "+"; then "<div class='add'>"+i[1..i.length-1]+"</div>"
-          when "-"; then "<div class='rem'>"+i[1..i.length-1]+"</div>"
-          else; i[1..i.length-1]
+          when "+": [1, i[1..i.length-1]]
+          when "-": [-1, i[1..i.length-1]]
+          else;  i[1..i.length-1]
           end
         end
-      end
-    end
-    File.delete(tmp_orig_body)
-    File.delete(tmp_vers_body)
-    lines.join("\n")
-    
+       end
+     end
+   File.delete(tmp_orig_body)
+   File.delete(tmp_vers_body)
+   lines    
   end
 
   def create_url

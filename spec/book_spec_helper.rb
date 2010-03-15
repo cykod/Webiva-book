@@ -23,19 +23,28 @@ end
     (1..size).collect { (i = Kernel.rand(62); i += ((i < 10) ? 48 : ((i < 36) ? 55 : 61 ))).chr }.join
   end
   def chapter_book
-
+    user = EndUser.push_target('test@webiva.com')
     @rand_name = random_string
 
-    @cb = BookBook.create(:name => 'chapter book')
-    @page1 = @cb.book_pages.create(:name => 'chapter one' )
-    @page1.move_to_child_of(@cb.root_node)
-    @page2 = @cb.book_pages.create(:name => 'chapter two' )
+    @cb = BookBook.create(:name => 'chapter book', :created_by_id => user.id)
+ #   raise @cb.inspect
+    @page1 = @cb.book_pages.create(:name => 'chapter one', :created_by_id => user.id )
+  #  @page1.move_to_child_of(@cb.root_node)
+    raise @page1.inspect
+    @page2 = @cb.book_pages.create(:name => 'chapter two' , :created_by_id => user.id)
+
     @page2.move_to_child_of(@cb.root_node)
-    @page3 = @cb.book_pages.create(:name => 'chapter three')
+    @page3 = @cb.book_pages.create(:name => 'chapter three', :created_by_id => user.id)
+    @page3.save
+
     @page3.move_to_child_of(@cb.root_node)
-    @page4 = @cb.book_pages.create(:name => 'chapter four' )
+    @page4 = @cb.book_pages.create(:name => 'chapter four' , :created_by_id => user.id)
+    @page4.save
+
     @page4.move_to_child_of(@cb.root_node)
-    @page5 = @cb.book_pages.create(:name => 'chapter five' )
+    @page5 = @cb.book_pages.create(:name => 'chapter five' , :created_by_id => user.id)
+    @page5.save
+
     @page5.move_to_child_of(@cb.root_node)
   end
 
@@ -53,7 +62,7 @@ end
 
 
   def create_book(name='Test Book')
-    BookBook.new(name)
+    BookBook.create(name)
   end
 
   def create_book_page(page=nil,options={:name => 'Page', :body => markdown_sample})    

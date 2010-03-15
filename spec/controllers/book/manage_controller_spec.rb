@@ -79,12 +79,11 @@ describe Book::ManageController do
 
     it 'should be able to delete the book' do
       post('delete', :path => [@cb.id], :kill => 'Destroy Book', :destroy => 'yes')
-
-#      @doesexist = BookBook.find_by_id(@cb.id)
- #     @doesexist.should be_nil
+      @doesexist = BookBook.find_by_id(@cb.id)
+      @doesexist.should be_nil
     end
-
-
+    
+    
     it 'should create default page if one does not exist' do
       post('book', :path => '', :action => 'book', :commit => 'Submit', :book => { :book_type => 'chapter',:url_scheme => 'flat', :name => 'Books should have default page'})
 
@@ -95,7 +94,6 @@ describe Book::ManageController do
         @defaultpage.name.should == 'Default Page'
         @defaultpage.id.should == 8
       end
-    
     end
   
   
