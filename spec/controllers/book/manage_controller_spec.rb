@@ -47,9 +47,11 @@ describe Book::ManageController do
 
 
     it 'should move page4 from position4 to position 1' do
+      @root_node = @cb.book_pages.find_by_name("Root")
+      @move = @root_node.id+1
       post( 'update_tree', :path => [@cb.id],  :chapter_tree => {@page4.id => {:left_id => '', :parent_id => '1'}})
       @subpage = @cb.book_pages.find_by_id(@page4.id)
-      @subpage.lft.should == 2
+      @subpage.lft.should == @move
     end
     
 
@@ -88,13 +90,12 @@ describe Book::ManageController do
       post('book', :path => '', :action => 'book', :commit => 'Submit', :book => { :book_type => 'chapter',:url_scheme => 'flat', :name => 'Books should have default page'})
 
       @blank_chapter_book = BookBook.find_by_name('Books should have default page')
-
       post('edit', :path => [@blank_chapter_book.id])
-        @defaultpage = @blank_chapter_book.book_pages.find(:last, :order => 'id asc')
-        @defaultpage.name.should == 'Default Page'
-        @defaultpage.id.should == 8
-      end
+      @defaultpage = @blank_chapter_book.book_pages.find(:last, :order => 'id asc')
+      @defaultpage.name.should == 'Default Page'
+      @defaultpage.id.should == 8
     end
+  end
   
   
     describe 'book1' do 

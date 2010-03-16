@@ -25,7 +25,7 @@ describe BookPage do
 
     @folder = DomainFile.create_folder("My Folder")
     @folder.save
-    fdata = fixture_file_upload("files/rails.png",'image/png')
+    fdata = fixture_file_upload("/files/rails.png",'image/png')
     @df = DomainFile.new(:filename => fdata,:parent_id => @folder.id)
     
    

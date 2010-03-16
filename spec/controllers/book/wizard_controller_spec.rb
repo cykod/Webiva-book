@@ -4,7 +4,9 @@ require  File.expand_path(File.dirname(__FILE__)) + "/../../../../../../spec/spe
 
 
 
+
 describe Book::WizardController do
+  reset_domain_tables :site_nodes, :page_paragraphs, :content_types, :content_nodes
 
   before(:each) do
     mock_editor
@@ -20,7 +22,8 @@ describe Book::WizardController do
   end
 
   it 'should redirect to structure on successful add' do
-    post( 'index', :path => [1], :commit => 'Add to Site',:controller => '/book/wizard', :wizard => {:opts => [""], :add_to_subpage => "asdf", :wiki_page_url => "edit", :add_to_id =>4, :add_to_existing => "", :book_id =>1})
+    @site_root = SiteNode.create(:node_type => 'P', :title => 'root_page')
+    post( 'index', :path => [1], :commit => 'Add to Site',:controller => '/book/wizard', :wizard => {:opts => [""], :add_to_subpage => "asdf", :wiki_page_url => "edit", :add_to_id =>@site_root.id, :add_to_existing => "", :book_id =>1})
     response.should redirect_to(:controller => '/structure')
 
 

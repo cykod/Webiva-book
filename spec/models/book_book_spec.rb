@@ -58,24 +58,38 @@ describe BookBook do
     end
     
     it 'should parse an insert row of csv' do
-      @book.parse_csv(@df.filename)     
-      @book.book_pages.find_by_name('goose').id.should == 7
+      @book.parse_csv(@df.filename)    
+      @count = @book.book_pages.maximum('id')
+      @book.book_pages.find_by_name('goose').id.should == @count
       
     end
     it 'should parse an update id row of csv' do
+      # ID 4 matches the import file 
       @book.parse_csv(@df.filename)
+      @page_gook = @book.book_pages(:all)
       @book.book_pages.find_by_id(4).name.should == 'chapter one'
       @book.book_pages.find_by_id(4).body.should == 'tons'
 
     end
     it 'should parse an update name row of csv' do
       @book.parse_csv(@df.filename)
-      @book.book_pages.find_by_name('duck').id.should == 3
+      raise @page2.id.inspect
+      @book.book_pages.find_by_id(@page4.id).name.should == 'duck'
     end
-    it 'should parse an entire file' do
+    it 'should parse an entire file' do 
+      @pre_ins_page_count = @book.book_pages.count(:conditions => ["name != ?", "Root"])
+      csv_data = CSV.read @df.filename
+      headers = csv_data.shift.map {|i| i.to_s }
+      import_data = csv_data.map {|row| row.map {|cell| cell.to_s } }
+
+      @new_page_count = 0
+      import_data.each {|row| @new_page_count +=1 if row[0] = ""}
+       
+      
+      @pre_ins = @book.book_pages.count
       @book.do_import(@df.filename)
-      @ins = @book.book_pages.find(:all).count
-      @ins.should == 7
+      @ins = @book.book_pages.count
+      @ins.should == @pre_ins_page_count+@new_page_count
       
     end
   end
