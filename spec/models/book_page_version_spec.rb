@@ -4,20 +4,20 @@ describe BookPageVersion do
   reset_domain_tables :book_books, :book_pages, :book_page_versions, :domain_files
 
   it 'should be able to add versions of a page' do
-    @book = BookBook.new(:name => 'book of versions')
+    @book = BookBook.create(:name => 'book of versions')
     @book.root_node.should_not be_nil
 
     @page = @book.book_pages.create(:name => 'Testing Versions Page')
     @page.move_to_child_of(@book.root_node)
+    user = EndUser.push_target('test@webiva.com')
 
-    @version = BookPageVersion.new(
+    @version = BookPageVersion.create(
                                   :name => "page.name", 
                                   :book_book_id => 1, 
                                   :book_page_id => 2, 
                                   :body => 'hi honey, im home',
                                   :version_status => 'unchecked',
-                                   :created_by_id => user.id
-)
+                                   :created_by_id => user.id)
     
     @version.id.should_not be_nil
   end
@@ -31,12 +31,13 @@ EOF
 
     markdown_html = nil
 
-    @book = BookBook.new(:name => 'book',
+    @book = BookBook.create(:name => 'book',
                             :content_filter => 'markdown')
 
-    @page = @book.book_pages.new(:name => 'page.name')
+    @page = @book.book_pages.create(:name => 'page.name')
     @page.move_to_child_of(@book.root_node)
 
+    user = EndUser.push_target('test@webiva.com')
 
     @version = BookPageVersion.new(
                                   :name => "page.name", 

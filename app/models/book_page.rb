@@ -129,7 +129,7 @@ class BookPage < DomainModel
 
   def save_version(user,version_body,v_type,v_status,ipaddress)
   #  raise user.inspect
-    self.book_page_versions.new(
+    self.book_page_versions.create(
                                    :name => self.name,
                                    :book_book_id => self.book_book_id,
                                    :body => version_body,

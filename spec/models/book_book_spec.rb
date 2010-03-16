@@ -1,15 +1,17 @@
 require  File.expand_path(File.dirname(__FILE__)) + "/../../../../../spec/spec_helper"
+require  File.expand_path(File.dirname(__FILE__)) + "/../book_spec_helper.rb"
 
 
 describe BookBook do
-  
+      include BookSpecHelper
+
   reset_domain_tables :book_books, :book_pages, :book_page_versions
 
   it "should automatically create a root node" do
 
     BookBook.count.should == 0
     BookPage.count.should == 0
-    @book = BookBook.create(:name => 'book')
+    @book = BookBook.create(:name => 'book',:created_by_id => 1)
     
     BookBook.count.should == 1
     BookPage.count.should == 1
@@ -20,7 +22,7 @@ describe BookBook do
     @book = BookBook.create(:name => 'book')
     @book.export_book('csv').should_not be_nil
     @filename = Dir.entries("#{RAILS_ROOT}/tmp/export/").detect {|f| f.match /book_export/}
-   # @filename.should == '1_book_export'
+    @filename.should == '1_book_export'
     
   end
   it "should not contain root pages" do
@@ -42,9 +44,9 @@ describe BookBook do
       
       @folder = DomainFile.create_folder("My Folder")
       @folder.save
-      fdata = fixture_file_upload("../../vendor/modules/book/spec/fixtures/files/book-import.csv")
+      fdata = book_fixture_file_upload("files/book-import.csv")
       @df = DomainFile.create(:filename => fdata,:parent_id => @folder.id)
-      fdata = fixture_file_upload("../../vendor/modules/book/spec/fixtures/files/book-import2.csv")
+      fdata = book_fixture_file_upload("files/book-import2.csv")
       @df2 = DomainFile.create(:filename => fdata,:parent_id => @folder.id)
     end
     

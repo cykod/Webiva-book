@@ -185,7 +185,6 @@ describe Book::ManageController do
              :body => ' isnt this fun'} )
 
       @v = @cb.book_page_versions.find(:last, :order => 'updated_at', :conditions => {:version_status => 'draft' })
-      
       @v.id.should == 7
 
 

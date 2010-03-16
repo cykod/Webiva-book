@@ -1,9 +1,11 @@
 
 require  File.expand_path(File.dirname(__FILE__)) + "/../../../../../spec/spec_helper"
+require  File.expand_path(File.dirname(__FILE__)) + "/../book_spec_helper.rb"
 
 
 describe BookPage do
-  
+    include BookSpecHelper
+
   reset_domain_tables :book_books, :book_pages, :book_page_versions, :domain_files
 
 
@@ -21,21 +23,21 @@ describe BookPage do
 
   it "should correctly filter content" do
 
-    @folder = DomainFile.new_folder("My Folder")
+    @folder = DomainFile.create_folder("My Folder")
     @folder.save
     fdata = fixture_file_upload("files/rails.png",'image/png')
     @df = DomainFile.new(:filename => fdata,:parent_id => @folder.id)
     
    
 
-    @book = BookBook.new(:name => 'book',
+    @book = BookBook.create(:name => 'book',
                             :content_filter => 'markdown',
                             :image_folder_id => @folder.id)
 
     
     
-    @page = @book.book_pages.new(:name => 'Test Page',
-                                    :body => markdown_sample)
+    @page = @book.book_pages.create(:name => 'Test Page',
+                                    :body => markdown_sample())
 
     @page.move_to_child_of(@book.root_node)
 
@@ -57,12 +59,12 @@ EOF
 <p>Link Two : <a href='no-title'>no title</a></p>
 EOF
 
-    @book = BookBook.new(:name => 'book',
+    @book = BookBook.create(:name => 'book',
                             :content_filter => 'markdown')
 
     
     
-    @page = @book.book_pages.new(:name => 'Test Page',
+    @page = @book.book_pages.create(:name => 'Test Page',
                                     :body => markdown_sample2)
 
     @page.move_to_child_of(@book.root_node)

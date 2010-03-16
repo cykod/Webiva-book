@@ -56,7 +56,7 @@ class BookBook < DomainModel
   
   
   def create_root_node
-    self.book_pages.new(:name => 'Root') unless book_type == 'flat'
+    self.book_pages.create(:name => 'Root') unless book_type == 'flat'
   end
 
   def flat_pages
