@@ -3,10 +3,8 @@ module BookSpecHelper
 
 
   def book_fixture_file_upload(path, mime_type = nil, binary = false)
-    ActiveSupport::TestCase.fixture_path = RAILS_ROOT + '/vendor/modules/book/spec/fixtures/'
-
-    book_fixture_path = ActionController::TestCase.send(:fixture_path) if ActionController::TestCase.respond_to?(:fixture_path)
-    ActionController::TestUploadedFile.new("#{fixture_path}#{path}", mime_type, binary)
+    book_fixture_path = RAILS_ROOT + '/vendor/modules/book/spec/fixtures/'
+    ActionController::TestUploadedFile.new("#{book_fixture_path}#{path}", mime_type, binary)
   end
 
   def markdown_sample 

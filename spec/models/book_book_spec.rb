@@ -73,8 +73,7 @@ describe BookBook do
     end
     it 'should parse an update name row of csv' do
       @book.parse_csv(@df.filename)
-      raise @page2.id.inspect
-      @book.book_pages.find_by_id(@page4.id).name.should == 'duck'
+      @book.book_pages.find_by_name('duck') 
     end
     it 'should parse an entire file' do 
       @pre_ins_page_count = @book.book_pages.count(:conditions => ["name != ?", "Root"])
