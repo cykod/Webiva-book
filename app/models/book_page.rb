@@ -154,11 +154,13 @@ class BookPage < DomainModel
     max_lines = 9999999 
     diff_header_length = 3
     
-    page_body_old      = self.body
+    page_body_old      = self.body.gsub(/(\n| )/,"\\1\n")
+
     if version_body.blank?
       page_body_new = ""
     else
-      page_body_new      = version_body.gsub(/\r\n/,"\n")
+      page_body_new = version_body.gsub(/\r\n/,"\n").gsub(/(\n| )/,"\\1\n")
+
     end
 
     
@@ -193,11 +195,27 @@ class BookPage < DomainModel
         end
        end
      end
-   File.delete(tmp_orig_body)
-   File.delete(tmp_vers_body)
-   lines    
-  end
+ 
+  
+    lines.inject([]) do |output,elem| 
+      if output[-1].class != elem.class
+        output << elem 
+      else
+        if elem.is_a?(String) 
+          output[-1] << elem
 
+          output
+        elsif output[-1][0] == elem[0]
+          output[-1][1] << elem[1]
+          output
+        else
+          output << elem
+
+        end
+        
+      end
+    end
+  end
   def create_url
     logger.warn('Create URL')
     if  self.book_book.id_url?
