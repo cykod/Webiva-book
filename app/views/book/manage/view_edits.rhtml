@@ -1,0 +1,120 @@
+
+<style type="text/css">
+
+#wiki_diff {
+    width: 800px;
+    font-family:Verdana;
+    font-size:11px;
+    
+}
+
+.rem {
+    background-color: #F7B0B0;
+    border-bottom: 1px solid #ff7f7f ;
+    text-decoration: line-through;
+    
+    
+  }
+.add {
+    background-color: #ccff99;
+    border-bottom: 1px solid #66FF00;
+    
+    
+  }
+pre {
+ white-space: pre-wrap;       /* css-3 */
+ white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+ white-space: -pre-wrap;      /* Opera 4-6 */
+ white-space: -o-pre-wrap;    /* Opera 7 */
+ word-wrap: break-word;       /* Internet Explorer 5.5+ */
+}
+#edit-actions {
+ height: 40px;
+ clear: both;
+}
+
+</style>
+
+<script>
+
+  RevisionDiff = {
+           updateTitle: function(page_id,title) {
+	   
+	       },
+       
+	   acceptRevision: function(version_id) {
+	       var params = { version_id:version_id };
+	       new Ajax.Request('<%= url_for :action => 'accept_wiki_edits', :path => [ @book.id ] %>',
+	       { parameters: params, evalScripts: true } );
+	       window.opener.SCMS.select_tab_num(3)
+	       
+	       },
+	  
+	   markReviewed: function(version_id) {
+	   
+	       var params = { version_id:version_id };
+	       new Ajax.Request('<%= url_for :action => 'review_wiki_edits', :path => [ @book.id ] %>',
+	       { parameters: params, evalScripts: true } );
+	       window.opener.SCMS.select_tab_num(3)
+	       window.close()
+       
+	       },
+       
+  
+  }
+
+</script>
+
+
+<% ajax_tabs ['Version Comparison',['Submitted Text']],'Version Comparison' do |t| -%>
+
+
+
+<% t.tab do -%>
+
+<div id="edit-actions">
+  <span style='float:right'> &nbsp;<button onclick='RevisionDiff.markReviewed(<%= @wiki_body.id %>); return false;'>Mark as Reviewed</button></span>
+
+<span style='float:left'> <button onclick='RevisionDiff.acceptRevision(<%= @wiki_body.id %>); return false;'>Make Version Live</button></span>
+</div>
+
+  <script>
+    RevisionDiff.updateTitle(<%= @wiki_body.id %>,"blahblahblah");
+  </script>
+
+<script >
+
+window.opener.SCMS.select_tab_num(1)
+
+</script>
+<div id="wiki_diff">
+ <%= @diff_body %>
+</div>
+<% end -%>
+<% t.tab do -%>
+
+<div id="edit-actions">
+  <span style='float:right'> &nbsp;<button onclick='RevisionDiff.markReviewed(<%= @wiki_body.id %>); return false;'>Mark as Reviewed</button></span>
+
+<span style='float:left'> <button onclick='RevisionDiff.acceptRevision(<%= @wiki_body.id %>); return false;'>Make Version Live</button></span>
+</div>
+  <script>
+    RevisionDiff.updateTitle(<%= @wiki_body.id %>,"blahblahblah");
+  </script>
+
+<script >
+
+window.opener.SCMS.select_tab_num(1)
+
+</script>
+<div id="wiki_diff">
+<pre>
+<code>
+ <%= h(@wiki_body.body) %>
+</code>
+</pre>
+</div>
+<% end -%>
+
+<% end -%>
+
