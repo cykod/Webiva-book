@@ -164,9 +164,7 @@ class Book::ManageController < ModuleController
       @version = @page.book_page_versions.find_by_id(params[:version_id])  
       @version.update_attributes(:body => params[:page][:body]) if @version
     else
-
       @prev_version =  @page.book_page_versions.latest_revision || nil
-      raise @prev_version.inspect
       @version = @page.save_version(myself, params[:page][:body], 'page', 'draft', @ipaddress,@prev_version)      
     end
   end 

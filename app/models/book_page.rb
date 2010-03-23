@@ -151,8 +151,6 @@ class BookPage < DomainModel
  
   def page_diff(version_body,orig_rev)
     version_body = version_body.to_s
-    tmstmp = Time.now.strftime("%Y%m%d%H%M%S")
-    tmp_loc = File.join(Rails.root, "tmp/export")
     max_lines = 9999999 
     diff_header_length = 3
     
@@ -170,13 +168,14 @@ class BookPage < DomainModel
     else
       page_body_new = version_body.gsub(/\r\n/,"\n").gsub(/(\n| )/,"\\1\n")
     end
+    
 
+    tmp_orig_body = "page_body_old"
+    tmp_vers_body = "page_body_new"
 
-    tmp_orig_body = File.join(tmp_loc,"page_body_old-#{tmstmp}".to_s)
-    tmp_vers_body = File.join(tmp_loc,"page_body_new-#{tmstmp}".to_s)
-
-    file_orig      = File.new(tmp_orig_body, "w+") 
-    file_vers      = File.new(tmp_vers_body, "w+")
+    logger.warn("Saving: #{tmp_orig_body}")
+    file_orig      = Tempfile.new(tmp_orig_body) 
+    file_vers      = Tempfile.new(tmp_vers_body)
 
     file_orig.write("#{page_body_old}\n") 
     file_vers.write("#{page_body_new}\n")
@@ -184,8 +183,9 @@ class BookPage < DomainModel
 
     file_orig.close
     file_vers.close
-    lines = %x(diff --unified=#{max_lines} #{tmp_orig_body} #{tmp_vers_body})
 
+    lines = %x(diff --unified=#{max_lines} #{file_orig.path} #{file_vers.path})
+     
      if lines.empty?
        lines = page_body_new.split(/\n/)
      else
@@ -204,7 +204,9 @@ class BookPage < DomainModel
        end
      end
 
-  
+    file_orig.unlink
+    file_vers.unlink 
+ 
     
     lines.inject([]) do |output,elem| 
       if output[-1].class != elem.class
@@ -225,9 +227,7 @@ class BookPage < DomainModel
         
       end
     end
-    File.delete(tmp_orig_body)
-    File.delete(tmp_vers_body)
-  end
+ end
   def create_url
     logger.warn('Create URL')
     if  self.book_book.id_url?
