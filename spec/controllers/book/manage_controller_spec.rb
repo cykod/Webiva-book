@@ -11,8 +11,8 @@ describe Book::ManageController do
     
     before(:each) do 
       mock_editor
+      mock_user
       chapter_book
-      
     end
     
     it 'should create a new sub page of @page1' do 
@@ -72,7 +72,7 @@ describe Book::ManageController do
       BookBook.should_receive( :find ).and_return(@cb)
       book_pages = mock('book1')
       
-      book_pages.should_receive( :find ).with( @page4.id.to_s ).and_return(@page4)
+      book_pages.should_receive( :find_by_id ).with( @page4.id.to_s ).and_return(@page4)
       @cb.should_receive( :book_pages ).and_return(book_pages)
       
       post( 'preview_page', :path => [@cb.id], :page_id => @page4.id, :page => {:body =>markdown_sample} )
@@ -87,7 +87,7 @@ describe Book::ManageController do
     
     
     it 'should create default page if one does not exist' do
-      post('book', :path => '', :action => 'book', :commit => 'Submit', :book => { :book_type => 'chapter',:url_scheme => 'flat', :name => 'Books should have default page'})
+      post('book', :path => '', :action => 'book', :commit => 'Submit', :book => { :book_type => 'chapter',:url_scheme => 'flat', :name => 'Books should have default page' ,:created_by_id => mock_user.id})
 
       @blank_chapter_book = BookBook.find_by_name('Books should have default page')
       post('edit', :path => [@blank_chapter_book.id])
@@ -107,7 +107,7 @@ describe Book::ManageController do
       
       it 'should create a flat book' do
         assert_difference 'BookBook.count', 1 do
-          post( 'book', :path => [], :commit => 'Submit', :book => {:cover_file_id => '', :name => @rand_name, :url_scheme => 'flat', :thumb_file_id => '', :preview_wrapper => '', :book_type => 'flat', :description => '', :style_template_id => '', :image_folder_id => '', :content_filter => 'markdown'} )
+          post( 'book', :path => [], :commit => 'Submit', :book => {:cover_file_id => '', :name => @rand_name, :url_scheme => 'flat', :thumb_file_id => '', :preview_wrapper => '', :book_type => 'flat', :description => '', :style_template_id => '', :image_folder_id => '', :content_filter => 'markdown'} ,:created_by_id => @myself.id)
           @newflatbook = BookBook.find(:last)
           @newflatbook.name.should == @rand_name
         end
@@ -137,84 +137,42 @@ describe Book::ManageController do
       @page4namechange.name.should == 'no longer page 4'
     end
 
-    it 'should be able to preview pages' do
+
+ it 'should be able to preview pages1' do
       BookBook.should_receive( :find ).and_return(@flatbook)
       book_pages = mock('book1')
       
-      book_pages.should_receive( :find ).with( @page4.id.to_s ).and_return(@page4)
+      book_pages.should_receive( :find_by_id ).with( @page4.id.to_s ).and_return(@page4)
       @flatbook.should_receive( :book_pages ).and_return(book_pages)
       
-      post( 'preview_page', :path => [@flatbook.id], :page_id => @page4.id, :page => {:body => markdown_sample} )
+      post( 'preview_page', :path => [@flatbook.id], :page_id => @page4.id, :page => {:body =>markdown_sample} )
       @page4.body_html.should == markdown_html
     end
+
+    
   end
   
   
-  describe 'autosave' do
+  describe 'versions' do
     before(:each) do 
       mock_editor
       chapter_book
 
     end
     
-    it 'should create an autosave version' do
-
-      post('save_draft', 
-           :path => [@cb.id], 
-           :page_id => @page1.id, 
-           :page => {
-             :name => @page1.name, 
-             :book_book_id => @cb.id, 
-             :book_page_id => @page1.id, 
-             :body => 'oh isnt this fun'} )
-   
-      @v = @cb.book_page_versions.find(:last, :order => 'updated_at', :conditions => {:version_status => 'draft' })
-
-      @v.id.should == 7
-          
-    end
-    it 'should update that same auto save version ' do
- # it is important for the draft save not to add
- #  a new record on save, it should update the existing record
-       post('save_draft', 
-           :path => [@cb.id], 
-           :page_id => @page1.id, 
-           :page => {
-             :name => @page1.name, 
-             :book_book_id => @cb.id, 
-             :book_page_id => @page1.id, 
-             :body => ' isnt this fun'} )
-
-      @v = @cb.book_page_versions.find(:last, :order => 'updated_at', :conditions => {:version_status => 'draft' })
-      @v.id.should == 7
-
-
-      post('save_draft', 
-           :path => [@cb.id], 
-           :page_id => @page1.id, 
-           :version_id => @v.id,
-           :page => {
-             :name => @page1.name, 
-             :book_book_id => @cb.id, 
-             :book_page_id => @page1.id, 
-             :body => ' isnt this funner'} )
+    it 'should create a version for a page' do
       
-      @ver = @cb.book_page_versions.find_by_id(@v.id)
-      @ver.body.should == ' isnt this funner'
-      @ver.id.should == @v.id
-
-
-
+      @parent = @cb.book_pages.find_by_parent_id(nil)
+      assert_difference 'BookPageVersion.count', 1 do
+        post( 'add_to_tree', :path => [@cb.id], :page_id => @parent.id)
+        @rev = @cb.book_page_versions.find(:first, :order => 'id desc')
+      end
     end
-      
     
   end
-
-
   
-
-
-
+  
+  
 end
 
 

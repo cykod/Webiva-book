@@ -106,9 +106,11 @@ describe Book::PageRenderer, :type => :controller do
             :commit => 'Submit',
             :page_versions => {
               :body => 'content book page version, new page'})
+
       # Need to add test back in
       @page1.reload
       @page1.book_page_versions.count.should == 2
+
     end
     
   end

@@ -5,13 +5,16 @@ require  File.expand_path(File.dirname(__FILE__)) + "/../book_spec_helper.rb"
 describe BookBook do
       include BookSpecHelper
 
-  reset_domain_tables :book_books, :book_pages, :book_page_versions
-
+  reset_domain_tables :book_books, :book_pages, :book_page_versions, :end_users
+  before(:each) do 
+    mock_editor
+    
+  end
   it "should automatically create a root node" do
 
     BookBook.count.should == 0
     BookPage.count.should == 0
-    @book = BookBook.create(:name => 'book',:created_by_id => 1)
+    @book = BookBook.create(:name => 'book',:created_by_id => mock_editor.id)
     
     BookBook.count.should == 1
     BookPage.count.should == 1
@@ -19,28 +22,28 @@ describe BookBook do
 
   end
   it "should create an exported book" do
-    @book = BookBook.create(:name => 'book')
+    @book = BookBook.create(:name => 'book', :created_by_id => mock_editor.id)
     @book.export_book('csv').should_not be_nil
     @filename = Dir.entries("#{RAILS_ROOT}/tmp/export/").detect {|f| f.match /book_export/}
     @filename.should == '1_book_export'
     
   end
   it "should not contain root pages" do
-     @book = BookBook.create(:name => 'book')
-    @book.book_pages.create(:name => 'new_page')
+    @book = BookBook.create(:name => 'book',:created_by_id => mock_editor.id)
+    @book.book_pages.create(:name => 'new_page',:created_by_id => mock_editor.id)
     @filename = Dir.entries("#{RAILS_ROOT}/tmp/export/").detect {|f| f.match /book_export/}
     @export_contents = IO.read("#{RAILS_ROOT}/tmp/export/#{@filename}").grep(/Root/)
     
     @export_contents.should == []
   end
- 
+  
   
  
   describe 'imports' do
     before(:each) do
-      @book = BookBook.create(:name => 'book')
-      @book.book_pages.create(:name => 'new_page')
-      @book.book_pages.create(:name => 'newer_page')
+      @book = BookBook.create(:name => 'book', :created_by_id => @myself.id)
+      @book.book_pages.create(:name => 'new_page',:created_by_id => @myself.id)
+      @book.book_pages.create(:name => 'newer_page',:created_by_id => @myself.id)
       
       @folder = DomainFile.create_folder("My Folder")
       @folder.save
@@ -58,21 +61,21 @@ describe BookBook do
     end
     
     it 'should parse an insert row of csv' do
-      @book.parse_csv(@df.filename)    
+      @book.parse_csv(@df.filename,@myself.id)    
       @count = @book.book_pages.maximum('id')
       @book.book_pages.find_by_name('goose').id.should == @count
       
     end
     it 'should parse an update id row of csv' do
       # ID 4 matches the import file 
-      @book.parse_csv(@df.filename)
+      @book.parse_csv(@df.filename,@myself.id)
       @page_gook = @book.book_pages(:all)
       @book.book_pages.find_by_id(4).name.should == 'chapter one'
       @book.book_pages.find_by_id(4).body.should == 'tons'
 
     end
     it 'should parse an update name row of csv' do
-      @book.parse_csv(@df.filename)
+      @book.parse_csv(@df.filename,@myself.id)
       @book.book_pages.find_by_name('duck') 
     end
     it 'should parse an entire file' do 
@@ -86,7 +89,8 @@ describe BookBook do
        
       
       @pre_ins = @book.book_pages.count
-      @book.do_import(@df.filename)
+ #     raise @myself.id.inspect # this is pass 1 and seems ok, passing to
+      @book.do_import(@df.filename,@myself.id)
       @ins = @book.book_pages.count
       @ins.should == @pre_ins_page_count+@new_page_count
       

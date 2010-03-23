@@ -39,7 +39,6 @@ class BookBook < DomainModel
 
   def root_node
     @root_node ||= self.book_pages.find(:first,:conditions => 'parent_id IS NULL', :order => 'book_pages.id')
-  # @root_node ||= self.book_pages.find(:first,:order => 'name')
 
   end
   def flat_book?
@@ -56,7 +55,7 @@ class BookBook < DomainModel
   
   
   def create_root_node
-    self.book_pages.create(:name => 'Root') unless book_type == 'flat'
+    self.book_pages.create(:name => 'Root', :created_by_id => self.created_by_id) unless book_type == 'flat'
   end
 
   def flat_pages
@@ -85,6 +84,8 @@ class BookBook < DomainModel
   
   def  first_page
     if book_type == 'flat'
+    raise "i'm getting here2".inspect
+
       self.book_pages.find(:first)
     else
       self.root_node.children[0]
@@ -117,7 +118,6 @@ class BookBook < DomainModel
     FileUtils.mkpath(tmp_path)
     
     filename  = tmp_path + self.id.to_s + "_book_export"
-    
 
     results[:filename] = filename
 
@@ -134,11 +134,11 @@ class BookBook < DomainModel
     
     results
   end
- def do_import(args) #:nodoc:
+ def do_import(args,user) #:nodoc:
    
    results = { }
    
-   
+  # raise user.inspect
    
    results[:completed] = false
 
@@ -155,7 +155,7 @@ class BookBook < DomainModel
    
    
    
-   self.parse_csv(args) do |imported,errors|
+   self.parse_csv(args,user) do |imported,errors|
      results[:imported] += imported
      Workling.return.set(args[:uid],results)
    end
@@ -175,15 +175,17 @@ class BookBook < DomainModel
     end
   end
 
- def parse_csv(args) 
+ def parse_csv(args,user) 
+#   raise user.inspect
+  # editor = EndUser.find(user)
    @@fields = [:id,:name,:description,:published,:body,:parent_id]
    reader = CSV.open(args,"r",",")
    reader.shift
    reader.each do |row|
      attr = {}
      @@fields.each_with_index { |field,idx| attr[field] = row[idx] }
- 
-
+     
+     
      @page = self.book_pages.find_by_id(attr[:id]) 
      @page_parent = self.book_pages.find_by_id(attr[:parent_id])
      if @page_parent 
@@ -212,7 +214,10 @@ class BookBook < DomainModel
        @page = self.book_pages.new(attr.slice(:name,
                                               :description,
                                               :published,
-                                              :body))
+                                              :body
+                                              ))
+       @page.editor = user
+     #  raise @page.editor.inspect
        @page.save
        @page.move_to_child_of(@page_parent || self.root_node) unless flat_book?
        

@@ -61,7 +61,7 @@ class Book::PageImportController < ModuleController
       @file = DomainFile.find_by_id(params[:confirm_import][:csvfile])
       @fp =  @file.filename
 
-      @book.do_import(@fp)
+      @book.do_import(@fp,myself)
     end
     redirect_to :controller => '/book/manage', :action => 'edit', :path => [ @book.id ]
     flash[:notice] = "Your pages have been imported"

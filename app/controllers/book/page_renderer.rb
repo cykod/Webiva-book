@@ -182,16 +182,23 @@ class Book::PageRenderer < ParagraphRenderer
       @newpage = @page.new_record?
       
       if @options.allow_auto_version == true
-        @page.update_attributes(:body => params[:page_versions][:body],:editor => myself, :edit_type => 'wiki_auto', :remote_ip => @ipaddress)
+
+        @page.body = params[:page_versions][:body]
+        @page.edit_type = "wiki_auto_publish"
+        @page.editor = myself
+        @page.v_status = "accepted wiki"
+        @page.remote_ip = @ipaddress
+
+        @page.save
         @page.move_to_child_of(@book.root_node) if @book.book_type == 'chapter' && @newpage
-        
+
         flash[:book_save] = "Page Saved".t
 
         redirect_paragraph "#{@options.content_page_url}/#{@page.url}"
         return true
       elsif @page.new_record? 
      
-        @page.update_attributes(:body => params[:page_versions][:body],:editor => myself, :edit_type => 'wiki', :remote_ip => @ipaddress, :published => false)
+        @page.update_attributes(:body => params[:page_versions][:body],:editor => myself, :edit_type => 'wiki_moderated', :remote_ip => @ipaddress, :published => false)
         @page.move_to_child_of(@book.root_node) if @book.book_type == 'chapter' && @newpage
 
         flash[:book_save] = "Page Created and Submitted for review".t
@@ -200,12 +207,7 @@ class Book::PageRenderer < ParagraphRenderer
         return true
       else 
 
-        @page.save_version(myself, 
-                           params[:page_versions][:body], 
-                           'wiki',
-                           'submitted',
-                            
-                           @ipaddress)
+        @page.save_version(myself,params[:page_versions][:body],'wiki','submitted',@ipaddress,nil)
         
         flash[:book_save] = "Your edits have been submitted for review.".t
 

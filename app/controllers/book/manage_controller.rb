@@ -19,19 +19,21 @@ class Book::ManageController < ModuleController
   
   def book
     if (params[:path][0] != nil) 
-
+      
       @book = BookBook.find_by_id(params[:path][0]) 
     else 
-      @book = BookBook.new(params[:book] || { :add_to_site => true })
+      @book = BookBook.new(params[:book])|| { :add_to_site => true }
     end
     cms_page_path ['Content'], @book.id ? [ "Configure %s",nil,@book.name ] : 'Create a book'
 
     if request.post? && params[:book]
+
       if params[:commit]
         @new_book = @book.id ? false : true
         if @new_book 
           @book.book_type = params[:book][:book_type]
           @book.url_scheme = params[:book][:url_scheme]
+          @book.created_by_id = myself.id
           if(@book.save)
             if @book.add_to_site
               redirect_to :controller => '/book/wizard', :book_id => @book.id
@@ -119,9 +121,8 @@ class Book::ManageController < ModuleController
   def page
     @book = BookBook.find(params[:path][0])
 
-    @page = @book.book_pages.find_by_id(params[:page_id]) || @book.book_pages.build(:created_by_id => myself.id)
+    @page = @book.book_pages.find_by_id(params[:page_id]) || @book.book_pages.new(:created_by_id => myself.id)
 
-    # @page = params[:page_id] ? @book.book_pages.find(params[:page_id]) : @book.book_pages.build(:created_by_id => myself.id)
     display_version_table false
 
     render :partial => 'page'
@@ -130,21 +131,27 @@ class Book::ManageController < ModuleController
 
   def save_page
     @book =  BookBook.find(params[:path][0])
-    
-    @page = @book.book_pages.find_by_id(params[:page_id]) || @book.book_pages.build(:created_by_id => myself.id)
+    @page = @book.book_pages.find_by_id(params[:page_id]) || @book.book_pages.build(:name => params[:page][:name])
     @page.updated_by_id = myself.id
     @new_page = true unless @page.id
-    
-    if @page.save_content(myself,params[:page].merge(:editor => myself, :v_status => params[:v_type],:remote_ip => request.remote_ip))
-      @updated=true;
-      @chapters = @book.nested_pages
-    end
+    @page.name = params[:page][:name]
+
+    @page.body = params[:page][:body]
+    @page.editor = myself
+    @page.edit_type = nil
+    @page.v_status = "auto"
+    @page.remote_ip = @ipaddress
+    @page.prev_version = @page.book_page_versions.latest_revision || nil
+
+    @page.save
+    @updated=true;
+    @chapters = @book.nested_pages
     
     if !params[:draft_id].blank?    
       @version = @page.book_page_versions.find_by_id(params[:draft_id])  
       @version.delete
     end
-
+    
     @save_error = params[:save_error]
   end
   
@@ -157,7 +164,10 @@ class Book::ManageController < ModuleController
       @version = @page.book_page_versions.find_by_id(params[:version_id])  
       @version.update_attributes(:body => params[:page][:body]) if @version
     else
-      @version = @page.save_version(myself, params[:page][:body], 'page', 'draft', @ipaddress)      
+
+      @prev_version =  @page.book_page_versions.latest_revision || nil
+      raise @prev_version.inspect
+      @version = @page.save_version(myself, params[:page][:body], 'page', 'draft', @ipaddress,@prev_version)      
     end
   end 
   ############# export
@@ -165,8 +175,7 @@ class Book::ManageController < ModuleController
   def export
     @book ||= BookBook.find(params[:path][0])
     cms_page_path ['Content'], [ 'Export Pages in %s',nil,@book.name ]
-    @export_options =  [[ 'CSV - Comma Separated Values', 'csv' ]
-                       ]   
+    @export_options =  [[ 'CSV - Comma Separated Values', 'csv' ]]   
     @export = DefaultsHashObject.new(:export_download => 'all', :export_format => 'csv')
   end
   def generate_export
@@ -219,7 +228,7 @@ class Book::ManageController < ModuleController
 
     @book =  BookBook.find(params[:path][0])
 
-    @page = @book.book_pages.find(params[:page_id])
+    @page = @book.book_pages.find_by_id(params[:page_id]) || @book.book_pages.build
 
     @page.attributes = params[:page]
     @page.pre_process_content_filter_body
@@ -247,16 +256,16 @@ class Book::ManageController < ModuleController
     
   end
   
-  def auto_save
-    if params[:autosave]
-      raise myself.inspect
-      @page.book_pages.save_version(myself, params[:page][:body], 'page', 'draft', @ipaddress)
-    end  
-  end
+  # def auto_save
+  #   if params[:autosave]
+  #    # raise myself.inspect
+  #     @page.book_pages.save_version(myself, params[:page][:body], 'page', 'draft', @ipaddress)
+  #   end  
+  # end
   
   def display_version_table(display=true)
     @book ||= BookBook.find(params[:path][0])
-    @page ||= @book.book_pages.find_by_id(params[:page_id])
+    @page ||= @book.book_pages.find_by_id(params[:page_id]) || @book.book_pages.build
     
     active_table_action('version') do |act,pids|
       case act
@@ -274,12 +283,45 @@ class Book::ManageController < ModuleController
   end
   
   def view_wiki_edits
-    @wiki_body = BookPageVersion.find_by_id(params[:path])
-    @escaped_body = pre_escape(@wiki_body.body_diff) 
     
+    @book = BookBook.find(params[:path][0])
+    @wiki_body = BookPageVersion.find_by_id(params[:version_id]) 
+    @escaped_body = pre_escape(@wiki_body.body_diff)
     @diff_body = output_diff_pretty(@escaped_body)
-    render :partial => 'view_edits'
+    
+    if  @wiki_body.body_diff == "1" && @wiki_body == nil
+      @diff_body = ""
+    end
+    render :action => 'view_edits', :layout => "manage_window", :path => @book.id
+    
   end
+  def review_wiki_edits
+    
+    @book = BookBook.find(params[:path][0])
+    @version = @book.book_page_versions.find(params[:version_id])
+    @version.update_attributes(:version_status => "reviewed", :updated_at => Time.now)
+
+    render :nothing => true
+  end
+  def accept_wiki_edits
+    @book = BookBook.find(params[:path][0])
+    @version = @book.book_page_versions.find(params[:version_id])
+ 
+    @page = @book.book_pages.find(@version.book_page_id)
+    
+    @page.edit_type = "admin editor"
+    @page.editor = myself
+    @page.body = @version.body
+    @page.v_status = "accepted wiki"
+    @page.save
+    
+    @version.update_attributes(:updated_at => Time.now)
+
+    render :nothing => true
+
+  end
+
+
   def add_subpages_form
     @book =  BookBook.find(params[:path][0])
 

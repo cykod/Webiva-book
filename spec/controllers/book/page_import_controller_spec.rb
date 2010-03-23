@@ -48,7 +48,7 @@ describe Book::PageImportController do
     end
 
     it 'should import when confirmed' do
-      post('confirm_import', :commit => 'Confirm', :path => [@cb.id], :confirm_import => {:csvfile => 3} )
+      post('confirm_import', :commit => 'Confirm', :created_by_id => @myself.id, :path => [@cb.id], :confirm_import => {:csvfile => 3} )
       @cb.book_pages.find(:all).count.should == 9
       @cb.book_pages.find_by_id(9).name.should == 'goose'
     end

@@ -20,13 +20,14 @@ class BookPage < DomainModel
     }
   end
 
-  attr_accessor :edit_type, :editor, :remote_ip, :v_status
+  attr_accessor :edit_type, :editor, :remote_ip, :v_status, :created_by_id, :prev_version
 
   before_save :create_url
   after_move :path_update
   after_save :force_resave_children
   after_save :auto_save_version
-  
+ # after_update :auto_save_version
+
   content_node :container_type => 'BookBook', :container_field => 'book_book_id',
   :except => Proc.new { |pg| !pg.parent_id }, :published => :published
 
@@ -127,43 +128,50 @@ class BookPage < DomainModel
     cd
   end
 
-  def save_version(user,version_body,v_type,v_status,ipaddress)
-  #  raise user.inspect
+  def save_version(editor,version_body,v_type,v_status,ipaddress,orig_rev)
     self.book_page_versions.create(
                                    :name => self.name,
                                    :book_book_id => self.book_book_id,
                                    :body => version_body,
-                                   :body_diff => page_diff(version_body),
-                                   :created_by_id => user.id, 
+                                   :body_diff => page_diff(version_body,orig_rev),
+                                   :created_by_id => editor,
                                    :version_status => v_status, 
                                    :version_type => v_type,
                                    :ipaddress => ipaddress)
   end
   
   def auto_save_version
- #   raise editor.inspect
-    save_version(self,self.body,edit_type||'editor',v_status||'auto',remote_ip)
+    if v_status == nil
+      orig_revision = book_page_versions.latest_revision || nil
+    end
+    save_version(editor||self.created_by_id,self.body,edit_type||'admin editor',v_status||'auto',remote_ip,prev_version)
   end
   protected
   
  
-  def page_diff(version_body)
+  def page_diff(version_body,orig_rev)
     version_body = version_body.to_s
     tmstmp = Time.now.strftime("%Y%m%d%H%M%S")
     tmp_loc = File.join(Rails.root, "tmp/export")
     max_lines = 9999999 
     diff_header_length = 3
     
-    page_body_old      = self.body.gsub(/(\n| )/,"\\1\n")
+    if !orig_rev.blank?
+      page = book_page_versions.find_by_id(orig_rev)
+      if page.body.nil?
+        page_body_old = ""
+      else
+        page_body_old = page.body.gsub(/(\n| )/,"\\1\n") 
+      end
+    end
 
     if version_body.blank?
       page_body_new = ""
     else
       page_body_new = version_body.gsub(/\r\n/,"\n").gsub(/(\n| )/,"\\1\n")
-
     end
 
-    
+
     tmp_orig_body = File.join(tmp_loc,"page_body_old-#{tmstmp}".to_s)
     tmp_vers_body = File.join(tmp_loc,"page_body_new-#{tmstmp}".to_s)
 
@@ -184,26 +192,28 @@ class BookPage < DomainModel
        
        lines = lines.split(/\n/)[diff_header_length..max_lines].
          collect do |i|
-        if i == nil
-          i = nil
+        if i == "  "
+          i = " "
         else
           case i[0,1]
-          when "+": [1, i[1..i.length-1]]
-          when "-": [-1, i[1..i.length-1]]
-          else;  i[1..i.length-1]
+          when "+": [1, i[1..i.length-1]+"\n"]
+          when "-": [-1, i[1..i.length-1]+"\n"]
+          else;  i[1..i.length-1]+"\n"
           end
         end
        end
      end
- 
+
   
+    
     lines.inject([]) do |output,elem| 
       if output[-1].class != elem.class
         output << elem 
       else
         if elem.is_a?(String) 
           output[-1] << elem
-
+     
+          
           output
         elsif output[-1][0] == elem[0]
           output[-1][1] << elem[1]
@@ -215,6 +225,8 @@ class BookPage < DomainModel
         
       end
     end
+    File.delete(tmp_orig_body)
+    File.delete(tmp_vers_body)
   end
   def create_url
     logger.warn('Create URL')
@@ -222,28 +234,38 @@ class BookPage < DomainModel
       self.url = self.id.to_s
     else
       name_base = self.name.downcase.gsub(/[ _]+/,"-").gsub(/[^a-z+0-9\-]/,"")
-     
+         logger.warn(self.url)
+         logger.warn(name_base)
+
       if name_base != self.url
+
         cnt = 1
         name_try = name_base
+
         while check_duplicate(name_try)
           name_try = name_base + '-' + cnt.to_s
+
           cnt += 1
         end
+
         self.url = name_try
+
       end
+
     end
 
     if self.parent_id || self.book_book.book_type == 'flat'
       path_update(true)
     end
-  
+    
   end
 
   def path_update(skip_save=false)
     logger.warn('Path Update')
     if self.book_book.flat_url? || self.book_book.id_url?
       self.path = "/" + self.url.to_s
+         logger.warn(self.path)
+
     else
       self.path = self.parent.path.to_s + "/" + self.url.to_s
     end
@@ -268,10 +290,13 @@ class BookPage < DomainModel
 
   def check_duplicate(name)
     if self.book_book.flat_url?
-      self.book_book.book_pages.find(:first,:conditions => ['`url`=? AND book_pages.id != ? ',name,self.id])
+      if self.id == nil
+      self.book_book.book_pages.find(:first,:conditions => ['`url`=? ',name])
+      else
+        self.book_book.book_pages.find(:first,:conditions => ['`url`=? AND book_pages.id != ? ',name,self.id])
+      end
     else
       self.book_book.book_pages.find(:first,:conditions => ['`url`=? AND book_pages.id != ? AND parent_id=? ',name,self.id,self.parent_id])
     end
   end
-
 end

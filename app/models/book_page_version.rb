@@ -11,6 +11,9 @@ class BookPageVersion < DomainModel
   validates_presence_of :book_book
 
   serialize :body_diff
+  named_scope :latest_revision, :conditions => {:version_type => 'admin editor'}, :order => 'id DESC', :limit => 1
+  
+ 
   
   def replace_page_links(code)
     cd = code.gsub(/\[\[([^\]]+)\]\](\(([^\)]+)\))?/) do |mtch|
@@ -19,16 +22,14 @@ class BookPageVersion < DomainModel
       linktext = $3
       if linktext
         newlink = $3.gsub(/[ _]+/,"-").downcase
-        "[#{titleinbrackets}](#{newlink})"
+      "[#{titleinbrackets}](#{newlink})"
       else
         newlink = $1.gsub(/[ _]+/,"-").downcase
         "[#{titleinbrackets}](#{newlink})"
-      end   
+      end
     end
-    
+    cd
   end
-  
-  
   
 end
 
