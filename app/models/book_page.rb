@@ -153,12 +153,12 @@ class BookPage < DomainModel
     version_body = version_body.to_s
     max_lines = 9999999 
     diff_header_length = 3
-    
     if !orig_rev.blank?
       page = book_page_versions.find_by_id(orig_rev)
       if page.body.nil?
         page_body_old = ""
       else
+
         page_body_old = page.body.gsub(/(\n| )/,"\\1\n") 
       end
     end
@@ -206,7 +206,6 @@ class BookPage < DomainModel
 
     file_orig.unlink
     file_vers.unlink 
- 
     
     lines.inject([]) do |output,elem| 
       if output[-1].class != elem.class

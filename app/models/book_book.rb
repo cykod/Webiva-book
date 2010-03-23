@@ -138,7 +138,6 @@ class BookBook < DomainModel
    
    results = { }
    
-  # raise user.inspect
    
    results[:completed] = false
 
@@ -176,8 +175,6 @@ class BookBook < DomainModel
   end
 
  def parse_csv(args,user) 
-#   raise user.inspect
-  # editor = EndUser.find(user)
    @@fields = [:id,:name,:description,:published,:body,:parent_id]
    reader = CSV.open(args,"r",",")
    reader.shift
@@ -217,7 +214,6 @@ class BookBook < DomainModel
                                               :body
                                               ))
        @page.editor = user
-     #  raise @page.editor.inspect
        @page.save
        @page.move_to_child_of(@page_parent || self.root_node) unless flat_book?
        

@@ -67,16 +67,15 @@ pre {
 
 
 <% ajax_tabs ['Version Comparison',['Submitted Text']],'Version Comparison' do |t| -%>
+<div id="edit-actions">
+  <div id="reviewed" <% if @review_button == false %> style="display:none;" <% end %>><span style='float:right' > &nbsp;<button onclick='RevisionDiff.markReviewed(<%= @wiki_body.id %>);  return false;'>Mark as Reviewed</button></span></div>
 
-
+<div id="live"><span style='float:left'> <button onclick='RevisionDiff.acceptRevision(<%= @wiki_body.id %>); return false;'>Make Version Live</button></span></div>
+</div>
 
 <% t.tab do -%>
 
-<div id="edit-actions">
-  <span style='float:right'> &nbsp;<button onclick='RevisionDiff.markReviewed(<%= @wiki_body.id %>); return false;'>Mark as Reviewed</button></span>
 
-<span style='float:left'> <button onclick='RevisionDiff.acceptRevision(<%= @wiki_body.id %>); return false;'>Make Version Live</button></span>
-</div>
 
   <script>
     RevisionDiff.updateTitle(<%= @wiki_body.id %>,"blahblahblah");
@@ -93,11 +92,6 @@ window.opener.SCMS.select_tab_num(1)
 <% end -%>
 <% t.tab do -%>
 
-<div id="edit-actions">
-  <span style='float:right'> &nbsp;<button onclick='RevisionDiff.markReviewed(<%= @wiki_body.id %>); return false;'>Mark as Reviewed</button></span>
-
-<span style='float:left'> <button onclick='RevisionDiff.acceptRevision(<%= @wiki_body.id %>); return false;'>Make Version Live</button></span>
-</div>
   <script>
     RevisionDiff.updateTitle(<%= @wiki_body.id %>,"blahblahblah");
   </script>

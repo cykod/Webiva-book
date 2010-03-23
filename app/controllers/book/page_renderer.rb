@@ -188,7 +188,7 @@ class Book::PageRenderer < ParagraphRenderer
         @page.editor = myself
         @page.v_status = "accepted wiki"
         @page.remote_ip = @ipaddress
-
+        @page.prev_version = nil
         @page.save
         @page.move_to_child_of(@book.root_node) if @book.book_type == 'chapter' && @newpage
 
@@ -197,8 +197,16 @@ class Book::PageRenderer < ParagraphRenderer
         redirect_paragraph "#{@options.content_page_url}/#{@page.url}"
         return true
       elsif @page.new_record? 
-     
-        @page.update_attributes(:body => params[:page_versions][:body],:editor => myself, :edit_type => 'wiki_moderated', :remote_ip => @ipaddress, :published => false)
+        @prev_version = book_page_versions.latest_revision
+
+
+        @page.body = params[:page_versions][:body]
+        @page.edit_type = "wiki"
+        @page.editor = myself
+        @page.v_status = "submitted"
+        @page.remote_ip = @ipaddress
+        @page.prev_version = nil
+        @page.save
         @page.move_to_child_of(@book.root_node) if @book.book_type == 'chapter' && @newpage
 
         flash[:book_save] = "Page Created and Submitted for review".t
@@ -206,8 +214,9 @@ class Book::PageRenderer < ParagraphRenderer
         redirect_paragraph "#{@options.content_page_url}"
         return true
       else 
-
-        @page.save_version(myself,params[:page_versions][:body],'wiki','submitted',@ipaddress,nil)
+        @prev_version = @page.book_page_versions.latest_revision
+        
+        @page.save_version(myself,params[:page_versions][:body],'wiki','submitted',@ipaddress,@prev_version)
         
         flash[:book_save] = "Your edits have been submitted for review.".t
 

@@ -286,19 +286,21 @@ class Book::ManageController < ModuleController
     @wiki_body = BookPageVersion.find_by_id(params[:version_id]) 
     @escaped_body = pre_escape(@wiki_body.body_diff)
     @diff_body = output_diff_pretty(@escaped_body)
-    
+    @review_button = false unless @wiki_body.version_status == 'submitted'
+
     if  @wiki_body.body_diff == "1" && @wiki_body == nil
       @diff_body = ""
     end
-    render :action => 'view_edits', :layout => "manage_window", :path => @book.id
     
+    render :action => 'view_edits', :layout => "manage_window", :path => @book.id 
   end
+ 
   def review_wiki_edits
     
     @book = BookBook.find(params[:path][0])
     @version = @book.book_page_versions.find(params[:version_id])
     @version.update_attributes(:version_status => "reviewed", :updated_at => Time.now)
-
+    
     render :nothing => true
   end
   def accept_wiki_edits
