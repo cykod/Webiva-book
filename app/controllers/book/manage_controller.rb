@@ -284,7 +284,7 @@ class Book::ManageController < ModuleController
     
     @book = BookBook.find(params[:path][0])
     @wiki_body = BookPageVersion.find_by_id(params[:version_id]) 
-    @escaped_body = pre_escape(@wiki_body.body_diff)
+    @escaped_body = pre_escape(@wiki_body.body_diff||"No Comparison Available")
     @diff_body = output_diff_pretty(@escaped_body)
     @review_button = false unless @wiki_body.version_status == 'submitted'
 
