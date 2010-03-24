@@ -1,12 +1,7 @@
 module BookSpecHelper
 
-  def create_end_user(email='test@webiva.com', options={:first_name => 'Test', :last_name => 'User'})
-    EndUser.push_target(email, options)
-  end
+  
 
-  def create_editor(email='test@webiva.com', options={:first_name => 'Editor', :last_name => "User"})
-    EndUser.push_target(email,options)
-  end
   def book_fixture_file_upload(path, mime_type = nil, binary = false)
     book_fixture_path = RAILS_ROOT + '/vendor/modules/book/spec/fixtures/'
     ActionController::TestUploadedFile.new("#{book_fixture_path}#{path}", mime_type, binary)
@@ -35,10 +30,13 @@ end
   end
   def chapter_book
     mock_editor
+    mock_user
     @rand_name = random_string
 
+#    raise @myself.id.inspect
+
     @cb = BookBook.create(:name => 'chapter book', :created_by_id => @myself.id)
-    @page1 = @cb.book_pages.create(:name => 'chapter one', :created_by_id => @myself.id )
+    @page1 = @cb.book_pages.create(:name => 'chapter one', :editor => @myself.id )
     @page1.move_to_child_of(@cb.root_node)
     @page2 = @cb.book_pages.create(:name => 'chapter two' , :created_by_id => @myself.id)
     @page2.move_to_child_of(@cb.root_node)

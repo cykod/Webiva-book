@@ -1,80 +1,62 @@
 require  File.expand_path(File.dirname(__FILE__)) + "/../../../../../../spec/spec_helper"
+require  File.expand_path(File.dirname(__FILE__)) + "/../../book_spec_helper.rb"
 
 describe Book::PageRenderer, :type => :controller do
-  
+  include BookSpecHelper
+
   controller_name :page
 
   integrate_views
 
-  reset_domain_tables :book_books, :book_pages, :book_page_versions, :page_paragraphs, :site_nodes
+  reset_domain_tables :book_books, :book_pages, :book_page_versions, :page_paragraphs, :site_nodes, :end_users
   
   # create a dummy book & pages
   before(:each) do
-    
+    chapter_book
     mock_user
   
-    @chapterbook = BookBook.create(:name => 'chapter book', :book_type => 'chapter')
-    @page1 = @chapterbook.book_pages.create(:name => 'chapter one' , :body => "this is a test to see if we suck" )
-    @page1.move_to_child_of(@chapterbook.root_node)
-    @page2 = @chapterbook.book_pages.create(:name => 'chapter two' )
-    @page2.move_to_child_of(@chapterbook.root_node)
-    @page3 = @chapterbook.book_pages.create(:name => 'chapter three', :published => false)
-    @page3.move_to_child_of(@chapterbook.root_node)
-    @page4 = @chapterbook.book_pages.create(:name => 'chapter four' )
-    @page4.move_to_child_of(@chapterbook.root_node)
-    @page5 = @chapterbook.book_pages.create(:name => 'chapter five' )
-    @page5.move_to_child_of(@chapterbook.root_node)
-
-    @page6 = @chapterbook.book_pages.create(:name => 'chapter six' , :published => false)
-    @page6.move_to_child_of(@page5)
-    @page7 = @chapterbook.book_pages.create(:name => 'chapter seven')
-    @page7.move_to_child_of(@page5)
-
-    @page8 = @chapterbook.book_pages.create(:name => 'chapter eight' )
-    @page8.move_to_child_of(@page7)
-    @chapterbook.root_node.reload
+    
   end
   describe 'using page connection' do
     
     it 'should find a book by page connection' do
 
-      @rnd = build_renderer('/page', '/book/page/content', {}, {:book => [ :book_id, @chapterbook.id ]})
-      BookBook.should_receive( :find_by_id ).with(@chapterbook.id).and_return(@chapterbook)
+      @rnd = build_renderer('/page', '/book/page/content', {}, {:book => [ :book_id, @cb.id ]})
+      BookBook.should_receive( :find_by_id ).with(@cb.id).and_return(@cb)
       @rnd.should_render_feature( :book_page_content )
       renderer_get( @rnd )
     end
 
     it 'should not display unpublished pages' do
 
-      @rnd = build_renderer('/page', '/book/page/chapters', {}, {:book => [ :book_id, @chapterbook.id ]})
-      BookBook.should_receive( :find_by_id ).with(@chapterbook.id).and_return(@chapterbook)
+      @rnd = build_renderer('/page', '/book/page/chapters', {}, {:book => [ :book_id, @cb.id ]})
+      BookBook.should_receive( :find_by_id ).with(@cb.id).and_return(@cb)
       @rnd.should_render_feature( :menu )
       renderer_get( @rnd )
-      @rnd.renderer_feature_data[:menu][2][:title].should == 'chapter four'
+      @rnd.renderer_feature_data[:menu][2][:title].should == @page3.name
     end
 
     it 'should display a chapter list based on id ' do
 
-      @rnd = build_renderer('/page', '/book/page/chapters', {:levels => 0}, {:book => [ :book_id, @chapterbook.id ]})
-      BookBook.should_receive( :find_by_id ).with(@chapterbook.id).and_return(@chapterbook)
+      @rnd = build_renderer('/page', '/book/page/chapters', {:levels => 0}, {:book => [ :book_id, @cb.id ]})
+      BookBook.should_receive( :find_by_id ).with(@cb.id).and_return(@cb)
       @rnd.should_render_feature( :menu )
       renderer_get( @rnd )
       
-      @rnd.renderer_feature_data[:menu][0][:title].should == 'chapter one'
-      @rnd.renderer_feature_data[:menu][-1][:title].should == 'chapter five'
+      @rnd.renderer_feature_data[:menu][0][:title].should == @page1.name
+      @rnd.renderer_feature_data[:menu][-1][:title].should == @page5.name
     end
     
     it 'should  display nested menus if requested, by default, only the top level id displayed' do
-      @rnd = build_renderer('/page', '/book/page/chapters', {:levels => 2}, {:book => [ :book_id, @chapterbook.id ]})
-      BookBook.should_receive( :find_by_id ).with(@chapterbook.id).and_return(@chapterbook)
+      @rnd = build_renderer('/page', '/book/page/chapters', {:levels => 2}, {:book => [ :book_id, @cb.id ]})
+      BookBook.should_receive( :find_by_id ).with(@cb.id).and_return(@cb)
       @rnd.should_render_feature( :menu )
       renderer_get( @rnd )
       
-      @rnd.renderer_feature_data[:menu][0][:title].should == 'chapter one'
-      @rnd.renderer_feature_data[:menu][1][:title].should == 'chapter two'
-      @rnd.renderer_feature_data[:menu][2][:title].should == 'chapter four'
-      @rnd.renderer_feature_data[:menu][3][:title].should == 'chapter five'
-      @rnd.renderer_feature_data[:menu][3][:menu][0][:title].should == 'chapter seven'
+      @rnd.renderer_feature_data[:menu][0][:title].should == @page1.name
+      @rnd.renderer_feature_data[:menu][1][:title].should == @page2.name
+      @rnd.renderer_feature_data[:menu][2][:title].should == @page3.name
+      @rnd.renderer_feature_data[:menu][3][:title].should == @page4.name
 
       # The book created above has 3 levels in the nested tree.  This test is checking to see that only 2 levels are being rendered.  This block steps through the the menu level 1 searching for menu level 2, and in menu level 2 another block verifies that menu level 3 is nil
       @rnd.renderer_feature_data[:menu].each do |menu|
@@ -91,14 +73,14 @@ describe Book::PageRenderer, :type => :controller do
       @content_page = SiteVersion.default.root_node.add_subpage 'content_book'
       @rnd = build_renderer('/page', '/book/page/wiki_editor', 
                             {:allow_create => true,
-                              :book_id => @chapterbook.id, 
+                              :book_id => @cb.id, 
                               :content_page_id => @content_page.id
                             },
-                            {:book => [ :book_id, @chapterbook.id ],
+                            {:book => [ :book_id, @cb.id ],
                              :flat_chapter =>[ :chapter_id ,@page1.url ]
                             })
      
-      BookBook.should_receive( :find_by_id ).with(@chapterbook.id).and_return(@chapterbook)
+      BookBook.should_receive( :find_by_id ).with(@cb.id).and_return(@cb)
 
       @page1.book_page_versions.count.should == 1
 
@@ -107,12 +89,53 @@ describe Book::PageRenderer, :type => :controller do
             :page_versions => {
               :body => 'content book page version, new page'})
 
-      # Need to add test back in
       @page1.reload
       @page1.book_page_versions.count.should == 2
 
     end
+
+    it 'should save the correct user as editor if one available' do
+      @u1 = EndUser.push_target('test11111@webiva.com')
+      @u2 = EndUser.push_target('test22222@webiva.com')
+      
+
+      ## Create a page as one user, and update that page as another user.
+      @content_page = SiteVersion.default.root_node.add_subpage 'content_book'
+      
+      @bb = BookBook.new(:name => "Test Username Updates")
+      @bb.save
+      @pg = @bb.book_pages.create(:name => "init page should have user 1", :editor => @u1.id)
     
+      @pg.body = "user should be u1.id"
+      @pg.editor = @u1.id
+      @pg.save
+
+      @pg.book_page_versions[0].created_by_id.should == @u1.id
+      
+      @rnd = build_renderer('/page', '/book/page/wiki_editor',
+                            {:allow_create => true,
+                              :book_id => @bb.id,
+                              :content_page_id => @content_page.id,
+                              :allow_auto_version => false
+                            },
+                            {:book => [ :book_id, @bb.id ],
+                              :flat_chapter =>[ :chapter_id ,@pg.url ]
+                            })
+
+      BookBook.should_receive( :find_by_id ).with(@bb.id).and_return(@bb)
+      @pg.book_page_versions.count.should == 2
+      
+      
+      renderer_post( @rnd, 
+                     :commit => "Submit", 
+                     :path => [@pg.id],
+                     :page_versions => 
+                     {:body => "content book page version orig page", 
+                       :editor => @u2.id})
+
+      @pg.book_page_versions[1].created_by_id.should == @u1.id
+      
+    end     
   end
   
 end
