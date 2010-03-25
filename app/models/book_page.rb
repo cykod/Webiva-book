@@ -11,7 +11,7 @@ class BookPage < DomainModel
 
   validates_presence_of :book_book
 
-  has_many :book_page_versions, :dependant => :destroy
+  has_many :book_page_versions, :dependent => :destroy
 
   apply_content_filter(:body => :body_html)  do |page|
     { :filter => page.book_book.content_filter,
