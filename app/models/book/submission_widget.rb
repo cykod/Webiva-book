@@ -6,7 +6,9 @@ class Book::SubmissionWidget < Dashboard::WidgetBase
 
     set_icon 'book_icon.png'
     set_title_link url_for(:controller => 'content')
-    @submissions = BookPageVersion.find(:all, :conditions => ['version_status = "submitted"'])
+    @submissions = BookPageVersion.find(:all, :include => [:created_by, :book_book],:conditions => ['version_status = "submitted"'], :limit => options.count)
+
+    
      render_widget :partial => '/book/submission_widget/submissions', :locals => { :submissions => @submissions , :options => options}
  
   end
