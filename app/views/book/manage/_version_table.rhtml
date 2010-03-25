@@ -12,7 +12,7 @@
     <% end %>
     <td><%= h t.version_status %></td>
     <td><%= h t.version_type %></td>
-    <td><%= link_to( h(t.created_at.to_s:short),  { :path => [ @book.id ], :version_id => t.id, :action => "view_wiki_edits" }, :popup => ['Revision Diff', 'height=600,width=830,scrollbars=yes'] )%></td>
+    <td><%= link_to( h(t.created_at.to_s:short),  { :path => [ @book.id ], :version_id => t.id, :action => "view_wiki_edits" }, :popup => ['Revision Diff', 'height=680,width=830,scrollbars=yes'] )%></td>
 
    <% end -%>
   <% end -%>

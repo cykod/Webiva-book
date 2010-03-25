@@ -87,7 +87,7 @@ window.opener.SCMS.select_tab_num(1)
 
 </script>
 <div id="wiki_diff">
- <%= @diff_body %>
+  <%= @diff_body %>
 </div>
 <% end -%>
 <% t.tab do -%>
@@ -104,7 +104,9 @@ window.opener.SCMS.select_tab_num(1)
 <div id="wiki_diff">
 <pre>
 <code>
- <%= h(@wiki_body.body) %>
+  <% form_for 'diff_body' do |f| %>
+ <%= f.text_area :description, :value => @wiki_body.body, :cols => 85, :rows => 34, :readonly => 'readonly' %>
+  <% end %>
 </code>
 </pre>
 </div>
