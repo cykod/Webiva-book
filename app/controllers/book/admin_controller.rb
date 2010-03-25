@@ -11,6 +11,7 @@ class Book::AdminController < ModuleController
   register_permissions :book, [ [ :manage, 'Manage Book', 'Manage Book' ],
                                   [ :config, 'Configure Book', 'Configure Book' ]
                                   ]
+  register_handler :webiva, :widget, "Book::SubmissionWidget"
 
   content_action  'Create a new Book', { :controller => '/book/manage', :action => 'book' }, :permit => 'book_config'
   
@@ -52,5 +53,7 @@ class Book::AdminController < ModuleController
   
   
   end
+
+  protected
   
 end
