@@ -132,8 +132,8 @@ class BookPage < DomainModel
     self.book_page_versions.create(
                                    :name => self.name,
                                    :book_book_id => self.book_book_id,
-                                   :body => version_body,
-                                   :body_diff => page_diff(version_body,orig_rev),
+                                   :base_version_id => orig_rev,
+                                   :body_diff => version_body,
                                    :created_by_id => editor,
                                    :version_status => v_status, 
                                    :version_type => v_type,
@@ -146,20 +146,20 @@ class BookPage < DomainModel
     end
     save_version(editor||self.created_by_id,self.body,edit_type||'admin editor',v_status||'auto',remote_ip,prev_version)
   end
-  protected
   
  
   def page_diff(version_body,orig_rev)
-    version_body = version_body.to_s
-    max_lines = 9999999 
+    curr_ver_body = version_body.to_s
+
+    max_lines = 99999999 
     diff_header_length = 3
     if !orig_rev.blank?
-      page = book_page_versions.find_by_id(orig_rev)
-      if page.body.nil?
+        base_ver = book_page_versions.find_by_id(orig_rev)
+      if base_ver.body_diff.nil?
         page_body_old = ""
       else
 
-        page_body_old = page.body.gsub(/(\n| )/,"\\1\n") 
+        page_body_old = base_ver.body_diff.gsub(/(\n| )/,"\\1\n") 
       end
     end
 
@@ -173,13 +173,11 @@ class BookPage < DomainModel
     tmp_orig_body = "page_body_old"
     tmp_vers_body = "page_body_new"
 
-    logger.warn("Saving: #{tmp_orig_body}")
     file_orig      = Tempfile.new(tmp_orig_body) 
     file_vers      = Tempfile.new(tmp_vers_body)
 
     file_orig.write("#{page_body_old}\n") 
     file_vers.write("#{page_body_new}\n")
-
 
     file_orig.close
     file_vers.close
@@ -195,6 +193,7 @@ class BookPage < DomainModel
         if i == "  "
           i = " "
         else
+    
           case i[0,1]
           when "+": [1, i[1..i.length-1]+"\n"]
           when "-": [-1, i[1..i.length-1]+"\n"]
@@ -227,14 +226,13 @@ class BookPage < DomainModel
       end
     end
  end
+  protected
   def create_url
     logger.warn('Create URL')
     if  self.book_book.id_url?
       self.url = self.id.to_s
     else
       name_base = self.name.downcase.gsub(/[ _]+/,"-").gsub(/[^a-z+0-9\-]/,"")
-         logger.warn(self.url)
-         logger.warn(name_base)
 
       if name_base != self.url
 

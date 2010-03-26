@@ -2,11 +2,12 @@ module BookHelper
   
 
   def pre_escape(revision)
-#raise revision.inspect
+    #raise revision.inspect
     revision.collect do |ln| 
       if !ln.is_a?(Array)
         ln = h(ln.to_s).gsub("  "," &nbsp;").gsub("\n\n","<br/>").gsub("&nbsp;\n","&nbsp;")
       else
+    #    raise "this is an array and has now blown up".inspect
        ln[1] =  h(ln[1]).gsub("  "," &nbsp;").gsub("\n\n","<br/>").gsub("&nbsp;\n","&nbsp;")
         ln = [ln[0], ln[1]]
       end
