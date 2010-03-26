@@ -33,7 +33,6 @@ end
     mock_user
     @rand_name = random_string
 
-#    raise @myself.id.inspect
 
     @cb = BookBook.create(:name => 'chapter book', :created_by_id => @myself.id)
     @page1 = @cb.book_pages.create(:name => 'chapter one', :editor => @myself.id )

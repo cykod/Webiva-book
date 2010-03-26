@@ -89,7 +89,6 @@ describe BookBook do
        
       
       @pre_ins = @book.book_pages.count
- #     raise @myself.id.inspect # this is pass 1 and seems ok, passing to
       @book.do_import(@df.filename,@myself.id)
       @ins = @book.book_pages.count
       @ins.should == @pre_ins_page_count+@new_page_count

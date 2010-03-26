@@ -206,7 +206,6 @@ class Book::PageRenderer < ParagraphRenderer
         @page.v_status = "submitted"
         @page.remote_ip = @ipaddress
         @page.prev_version = nil
-      #  raise @page.editor.inspect
         @page.save
         @page.move_to_child_of(@book.root_node) if @book.book_type == 'chapter' && @newpage
 

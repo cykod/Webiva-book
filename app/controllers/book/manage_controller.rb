@@ -256,14 +256,6 @@ class Book::ManageController < ModuleController
     end
     
   end
-  
-  # def auto_save
-  #   if params[:autosave]
-  #    # raise myself.inspect
-  #     @page.book_pages.save_version(myself, params[:page][:body], 'page', 'draft', @ipaddress)
-  #   end  
-  # end
-  
   def display_version_table(display=true)
     @book ||= BookBook.find(params[:path][0])
     @page ||= @book.book_pages.find_by_id(params[:page_id]) || @book.book_pages.build
