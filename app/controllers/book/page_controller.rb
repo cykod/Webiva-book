@@ -43,5 +43,6 @@ editor_for :wiki_editor, :name => "Wiki Editor", :feature => 'book_page_wiki_edi
   class WikiEditorOptions < HashModel
     attributes :book_id => nil, :auto_merge => false, :content_page_id => nil, :allow_create => false, :allow_auto_version => true
     page_options :content_page_id
+    boolean_options :allow_auto_version
   end
 end 

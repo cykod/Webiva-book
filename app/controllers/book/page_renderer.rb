@@ -181,7 +181,7 @@ class Book::PageRenderer < ParagraphRenderer
     if params[:commit] && @page
       @newpage = @page.new_record?
       
-      if @options.allow_auto_version == true
+      if @options.allow_auto_version
 
         @page.body = params[:page_versions][:body]
         @page.edit_type = "wiki_auto_publish"
