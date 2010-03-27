@@ -15,7 +15,7 @@ describe BookPageVersion do
                                   :name => "page.name", 
                                   :book_book_id => 1, 
                                   :book_page_id => 2, 
-                                  :body => 'hi honey, im home',
+                                  :base_version_id => nil,
                                   :version_status => 'unchecked',
                                    :created_by_id => user.id)
     
@@ -43,11 +43,11 @@ EOF
                                   :name => "page.name", 
                                   :book_book_id => 1, 
                                   :book_page_id => 2, 
-                                  :body => markdown_sample,
+                                  :base_version_id => nil,
+                                  :body_diff => markdown_sample,
                                   :version_status => 'unchecked',
                                    :created_by_id => user.id)
 
-    @version.body_html.should == markdown_html
   end
   
 end

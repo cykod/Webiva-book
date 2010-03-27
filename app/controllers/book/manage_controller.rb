@@ -141,8 +141,11 @@ class Book::ManageController < ModuleController
     @page.edit_type = nil
     @page.v_status = "auto"
     @page.remote_ip = @ipaddress
-    @page.prev_version = @page.book_page_versions.latest_revision || nil
-
+    if @page.book_page_versions.latest_revision.nil?
+        @page.prev_version = @page.book_page_versions.latest_revision[0].id
+    else 
+         @page.prev_version = nil
+    end
     @page.save
     @updated=true;
     @chapters = @book.nested_pages
@@ -165,7 +168,7 @@ class Book::ManageController < ModuleController
       @version.update_attributes(:body => params[:page][:body]) if @version
     else
       @prev_version =  @page.book_page_versions.latest_revision || nil
-      @version = @page.save_version(myself, params[:page][:body], 'page', 'draft', @ipaddress,@prev_version)      
+      @version = @page.save_version(myself, params[:page][:body], 'page', 'draft', @ipaddress,@prev_version[0].id)      
     end
   end 
   ############# export
@@ -253,14 +256,6 @@ class Book::ManageController < ModuleController
     end
     
   end
-  
-  # def auto_save
-  #   if params[:autosave]
-  #    # raise myself.inspect
-  #     @page.book_pages.save_version(myself, params[:page][:body], 'page', 'draft', @ipaddress)
-  #   end  
-  # end
-  
   def display_version_table(display=true)
     @book ||= BookBook.find(params[:path][0])
     @page ||= @book.book_pages.find_by_id(params[:page_id]) || @book.book_pages.build
@@ -283,12 +278,16 @@ class Book::ManageController < ModuleController
   def view_wiki_edits
     
     @book = BookBook.find(params[:path][0])
-    @wiki_body = BookPageVersion.find_by_id(params[:version_id]) 
-    @escaped_body = pre_escape(@wiki_body.body_diff||"No Comparison Available")
-    @diff_body = output_diff_pretty(@escaped_body)
-    @review_button = false unless @wiki_body.version_status == 'submitted'
+    @vers_body = BookPageVersion.find_by_id(params[:version_id]) 
+    @orig_body = BookPageVersion.find_by_id(@vers_body.base_version_id) 
+    @page = @book.book_pages.find_by_id(@vers_body.book_page_id)
 
-    if  @wiki_body.body_diff == "1" && @wiki_body == nil
+    @wiki_body = @page.page_diff(@vers_body.body_diff,@orig_body)
+    @escaped_body = pre_escape(@wiki_body||"No Comparison Available")
+    @diff_body = output_diff_pretty(@escaped_body)
+    @review_button = false unless @vers_body.version_status == 'submitted'
+
+    if  @vers_body.body_diff == "1" && @wiki_body == nil
       @diff_body = ""
     end
     
@@ -305,17 +304,18 @@ class Book::ManageController < ModuleController
   end
   def accept_wiki_edits
     @book = BookBook.find(params[:path][0])
-    @version = @book.book_page_versions.find(params[:version_id])
+    @version = @book.book_page_versions.find_by_id(params[:version_id])
  
     @page = @book.book_pages.find(@version.book_page_id)
     
     @page.edit_type = "admin editor"
     @page.editor = myself
-    @page.body = @version.body
+    @page.body = @version.body_diff
+  #  @page.prev_version = 
     @page.v_status = "accepted wiki"
     @page.save
     
-    @version.update_attributes(:updated_at => Time.now)
+    @version.update_attributes(:updated_at => Time.now, :version_status => "reviewed")
 
     render :nothing => true
 

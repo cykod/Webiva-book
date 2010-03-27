@@ -2,7 +2,6 @@ module BookHelper
   
 
   def pre_escape(revision)
-#raise revision.inspect
     revision.collect do |ln| 
       if !ln.is_a?(Array)
         ln = h(ln.to_s).gsub("  "," &nbsp;").gsub("\n\n","<br/>").gsub("&nbsp;\n","&nbsp;")

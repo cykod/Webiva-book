@@ -84,8 +84,6 @@ class BookBook < DomainModel
   
   def  first_page
     if book_type == 'flat'
-    raise "i'm getting here2".inspect
-
       self.book_pages.find(:first)
     else
       self.root_node.children[0]
