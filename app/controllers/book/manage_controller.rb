@@ -282,13 +282,13 @@ class Book::ManageController < ModuleController
     @orig_body = BookPageVersion.find_by_id(@vers_body.base_version_id) 
     @page = @book.book_pages.find_by_id(@vers_body.book_page_id)
 
-    @wiki_body = @page.page_diff(@vers_body.body_diff,@orig_body)
+    @wiki_body = @page.page_diff(@vers_body.body,@orig_body)
     @escaped_body = pre_escape(@wiki_body||"No Comparison Available")
     @diff_body = output_diff_pretty(@escaped_body)
     @review_button = false unless @vers_body.version_status == 'submitted'
 
-    if  @vers_body.body_diff == "1" && @wiki_body == nil
-      @diff_body = ""
+    if  @vers_body.body == "1" && @wiki_body == nil
+      @diff = ""
     end
     
     render :action => 'view_edits', :layout => "manage_window", :path => @book.id 
@@ -310,7 +310,7 @@ class Book::ManageController < ModuleController
     
     @page.edit_type = "admin editor"
     @page.editor = myself
-    @page.body = @version.body_diff
+    @page.body = @version.body
   #  @page.prev_version = 
     @page.v_status = "accepted wiki"
     @page.save

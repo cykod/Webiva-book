@@ -10,7 +10,7 @@ class BookPageVersion < DomainModel
 
   validates_presence_of :book_book
 
-  serialize :body_diff
+  serialize :body
   named_scope :latest_revision, :conditions => {:version_type => 'admin editor'}, :order => 'id DESC', :limit => 1
   
  

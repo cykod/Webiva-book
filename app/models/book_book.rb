@@ -115,8 +115,8 @@ class BookBook < DomainModel
     tmp_path = "#{RAILS_ROOT}/tmp/export/"
     FileUtils.mkpath(tmp_path)
     
-    filename  = tmp_path + self.id.to_s + "_book_export"
-
+    dom_id =  Domain.find(DomainModel.active_domain_id).id.to_s
+    filename  = tmp_path + "domain:" + dom_id + "-book:" + self.id.to_s + "_book_export"
     results[:filename] = filename
 
      
