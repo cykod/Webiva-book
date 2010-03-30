@@ -16,6 +16,7 @@ describe BookPageVersion do
                                   :book_book_id => 1, 
                                   :book_page_id => 2, 
                                   :base_version_id => nil,
+                                  :body => "body text",
                                   :version_status => 'unchecked',
                                    :created_by_id => user.id)
     
@@ -44,7 +45,7 @@ EOF
                                   :book_book_id => 1, 
                                   :book_page_id => 2, 
                                   :base_version_id => nil,
-                                  :body_diff => markdown_sample,
+                                  :body => markdown_sample,
                                   :version_status => 'unchecked',
                                    :created_by_id => user.id)
 

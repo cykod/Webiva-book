@@ -133,7 +133,7 @@ class BookPage < DomainModel
                                    :name => self.name,
                                    :book_book_id => self.book_book_id,
                                    :base_version_id => orig_rev,
-                                   :body_diff => version_body,
+                                   :body => version_body,
                                    :created_by_id => editor,
                                    :version_status => v_status, 
                                    :version_type => v_type,
@@ -155,11 +155,11 @@ class BookPage < DomainModel
     diff_header_length = 3
     if !orig_rev.blank?
         base_ver = book_page_versions.find_by_id(orig_rev)
-      if base_ver.body_diff.nil?
+      if base_ver.body.nil?
         page_body_old = ""
       else
 
-        page_body_old = base_ver.body_diff.gsub(/(\n| )/,"\\1\n") 
+        page_body_old = base_ver.body.gsub(/(\n| )/,"\\1\n") 
       end
     end
 

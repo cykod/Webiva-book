@@ -61,7 +61,7 @@ class BookWizard < HashModel
                                              { 
                                                :content_page_id => nd.id,
                                                :book_id => self.book_id,
-                                               :allow_auto_version => true,
+                                               :allow_auto_version => false,
                                                :allow_create => true
                                              }
                                              )
