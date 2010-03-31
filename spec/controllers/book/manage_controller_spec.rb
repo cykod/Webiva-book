@@ -107,9 +107,9 @@ describe Book::ManageController do
       
       it 'should create a flat book' do
         assert_difference 'BookBook.count', 1 do
-          post( 'book', :path => [], :commit => 'Submit', :book => {:cover_file_id => '', :name => @rand_name, :url_scheme => 'flat', :thumb_file_id => '', :preview_wrapper => '', :book_type => 'flat', :description => '', :style_template_id => '', :image_folder_id => '', :content_filter => 'markdown'} ,:created_by_id => @myself.id)
+          post( 'book', :path => [], :commit => 'Submit', :book => {:cover_file_id => '', :name => @rand_name_f, :url_scheme => 'flat', :thumb_file_id => '', :preview_wrapper => '', :book_type => 'flat', :description => '', :style_template_id => '', :image_folder_id => '', :content_filter => 'markdown'} ,:created_by_id => @myself.id)
           @newflatbook = BookBook.find(:last)
-          @newflatbook.name.should == @rand_name
+          @newflatbook.name.should == @rand_name_f
         end
         
     end
@@ -117,8 +117,9 @@ describe Book::ManageController do
     
     it 'should create a page in a flat book' do
       assert_difference 'BookPage.count', 1 do
-        post( 'save_page', :path => [@flatbook.id], :page_id => '', :page => { :name => @rand_name, :body => '', :published => 'true', :description => '' } )
-        @newpage = @flatbook.book_pages.find_by_name(@rand_name)
+
+        post( 'save_page', :path => [@flatbook.id], :page_id => '', :page => { :name => @rand_name_f, :body => '', :published => 'true', :description => '' } )
+        @newpage = @flatbook.book_pages.find_by_name(@rand_name_f)
         @newpage.should_not be_nil
       end
     end
@@ -157,15 +158,22 @@ describe Book::ManageController do
     before(:each) do 
       mock_editor
       chapter_book
-
+      flat_book
     end
     
-    it 'should create a version for a page' do
+    it 'should create a version for a page in a chapter book' do
       
       @parent = @cb.book_pages.find_by_parent_id(nil)
       assert_difference 'BookPageVersion.count', 1 do
         post( 'add_to_tree', :path => [@cb.id], :page_id => @parent.id)
         @rev = @cb.book_page_versions.find(:first, :order => 'id desc')
+      end
+    end
+    it 'should create a version for a new flat book page' do
+      assert_difference 'BookPageVersion.count', 1 do
+      post( 'save_page', :path => [@flatbook.id], :page_id => @page1.id, :page => {:name => @rand_name_f, :body => "1"})
+      prev = @cb.book_page_versions.find(:first, :order => 'id desc')
+
       end
     end
     

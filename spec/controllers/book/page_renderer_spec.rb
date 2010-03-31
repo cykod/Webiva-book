@@ -126,17 +126,61 @@ describe Book::PageRenderer, :type => :controller do
       @pg.book_page_versions.count.should == 2
       
       
-      renderer_post( @rnd, 
-                     :commit => "Submit", 
-                     :path => [@pg.id],
-                     :page_versions => 
-                     {:body => "content book page version orig page", 
-                       :editor => @u2.id})
+      renderer_post( @rnd, :commit => "Submit", :path => [@pg.id], :page_versions => {:body => "content book page version orig page", :editor => @u2.id})
 
       @pg.book_page_versions[1].created_by_id.should == @u1.id
-      
+
     end     
   end
-  
-end
+  describe 'Auto Publishing Wiki' do
 
+    def build_auto_publish(url,opts={}) 
+      @rnd = build_renderer('/page', '/book/page/wiki_editor', {:allow_create => true, :book_id => @bb.id, :book_page_id => @pg.id, :content_page_id => @content_page.id, :allow_auto_version => true }.merge(opts), {:book => [ :book_id, @bb.id ], :flat_chapter =>[ :chapter_id ,url ] })
+    end
+    before(:each) do
+      @u1 = EndUser.push_target('test11111@webiva.com')
+      @content_page = SiteVersion.default.root_node.add_subpage 'content_book'
+      @bb = BookBook.create(:name => "Test AutoPublish Versions")
+      @pg = @bb.book_pages.create(:name => "Page Save", :editor => @u1.id)
+      @pg.move_to_child_of(@bb.root_node)
+      @pg.body = "Auto Publish Page Body 1st"
+      @pg.editor = @u1.id
+      @pg.save
+    end
+   
+    
+    it 'should create a version of an auto-published updated page' do
+      build_auto_publish(@pg.url, {:allow_auto_version => true}) 
+      BookBook.should_receive( :find_by_id ).with(@bb.id).and_return(@bb)
+      @pg.book_page_versions.length.should == 2
+      renderer_post( @rnd, :commit => "Submit", :path => [@bb.name, @rnd.site_node.node_path, @pg.name], :book_page_id => @pg.id, :page_versions => {:body => "Auto Publish Page Body Now 2nd"}, :editor => @u1.id)
+      @pg.reload
+      @pg.book_page_versions.count.should == 3
+    end
+    it 'should create a version of an auto-published new page' do
+      build_auto_publish("newpage", {:allow_auto_version => true}) 
+      BookBook.should_receive( :find_by_id ).with(@bb.id).and_return(@bb)
+      renderer_post( @rnd, :commit => "Submit", :path => [@bb.name, @rnd.site_node.node_path, "newpage"], :book_page_id => "", :page_versions => {:body => "Auto Publish Page Body 1st"}, :editor => @u1.id)
+
+      @new_pg = @bb.book_pages.find_by_name("newpage")
+      @new_pg.book_page_versions.count.should == 1
+    end
+    it 'should create a version of a non-auto-published updated page' do
+      build_auto_publish(@pg.url, {:allow_auto_version => false}) 
+      BookBook.should_receive( :find_by_id ).with(@bb.id).and_return(@bb)
+      @pg.book_page_versions.length.should == 2
+      renderer_post( @rnd, :commit => "Submit", :path => [@bb.name, @rnd.site_node.node_path, @pg.name], :book_page_id => @pg.id, :page_versions => {:body => "Auto Publish Page Body Now 2nd"}, :editor => @u1.id)
+      @pg.reload
+      @pg.book_page_versions.count.should == 3
+    end
+    it 'should create a version of a non-auto-published new page' do
+      build_auto_publish("newpage", {:allow_auto_version => false}) 
+      BookBook.should_receive( :find_by_id ).with(@bb.id).and_return(@bb)
+      renderer_post( @rnd, :commit => "Submit", :path => [@bb.name, @rnd.site_node.node_path, "newpage"], :book_page_id => "", :page_versions => {:body => "Auto Publish Page Body 1st"}, :editor => @u1.id)
+      @new_pg = @bb.book_pages.find_by_name("newpage")
+      @new_pg.book_page_versions.count.should == 1
+
+    end
+
+  end
+end
