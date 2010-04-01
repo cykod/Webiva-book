@@ -141,10 +141,10 @@ class Book::ManageController < ModuleController
     @page.edit_type = nil
     @page.v_status = "auto"
     @page.remote_ip = @ipaddress
-    if @page.book_page_versions.latest_revision.nil?
-        @page.prev_version = @page.book_page_versions.latest_revision[0].id
-    else 
+    if @page.book_page_versions.latest_revision == []
          @page.prev_version = nil
+    else 
+          @page.prev_version = @page.book_page_versions.latest_revision[0].id
     end
     @page.save
     @updated=true;

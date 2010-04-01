@@ -139,10 +139,10 @@ class Book::PageRenderer < ParagraphRenderer
       end 
       unless @page 
         page_conn_type,page_url = page_connection(:flat_chapter)
-
         if @options.show_first_page && page_url.blank?
           @page = @book.first_page
         else
+          
           @page = @book.book_pages.find_by_url_and_published(page_url,true,:conditions => 'parent_id IS NOT NULL')
         end
 
@@ -188,7 +188,11 @@ class Book::PageRenderer < ParagraphRenderer
         @page.editor = myself.id
         @page.v_status = "accepted wiki"
         @page.remote_ip = @ipaddress
-        @page.prev_version = nil
+        if @page.book_page_versions.latest_revision == []
+          @page.prev_version = nil
+        else 
+          @page.prev_version = @page.book_page_versions.latest_revision[0].id
+        end
         @page.save
         @page.move_to_child_of(@book.root_node) if @book.book_type == 'chapter' && @newpage
 

@@ -36,7 +36,7 @@ describe BookBook do
       File.delete("#{@file_loc}/#{@files}")
     end
     it "should create an exported book" do
-      @files.should == "domain:3-book:#{@book.id}_book_export"
+      @files.should == "domain:#{DomainModel.active_domain_id.to_s}-book:#{@book.id}_book_export"
       @export.should_not be_nil
     end
     it "exported book should not contain root pages" do
