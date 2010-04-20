@@ -1,5 +1,5 @@
 class Book::SubmissionWidget < Dashboard::WidgetBase
-  widget :submissions, :name => "Book: Display Recent Wiki Edits", :title => "Recent Wiki Edits", :permission => :book_editor
+  widget :submissions, :name => "Book: Display Recent Wiki Edits", :title => "Recent Wiki Edits", :permission => :book_manage
 
 
   def submissions
