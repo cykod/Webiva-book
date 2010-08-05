@@ -9,12 +9,11 @@
 <%= f.header 'Options' %> 
 
 <% if @book.id -%>
-   <%= f.label_field :book_type_display, :label => 'Book Type',:description => 'Cannot be modified' %>
- <%= f.label_field :url_scheme_display, :label => 'URL Scheme',:description => 'Cannot be modified' %>
+  <%= f.label_field :book_type_display, :label => 'Book Type',:description => 'Cannot be modified' %>
+  <%= f.label_field :url_scheme_display, :label => 'URL Scheme',:description => 'Cannot be modified' %>
 <% else -%>
-   <%= f.radio_buttons :book_type, BookBook.book_type_select_options, :description => 'Cannot be changed once selected' %> 
- <%= f.radio_buttons :url_scheme, BookBook.url_scheme_select_options, :description => 'Cannot be changed once selected' %> 
-  
+  <%= f.radio_buttons :book_type, BookBook.book_type_select_options, :description => 'Cannot be changed once selected' %> 
+  <%= f.radio_buttons :url_scheme, BookBook.url_scheme_select_options, :description => 'Cannot be changed once selected' %> 
 <% end -%>
 
 <%= f.select :content_filter, ContentFilter.filter_options %>
@@ -22,15 +21,10 @@
 <%= f.select :style_template_id, [['--Please select a style--',nil]] + SiteTemplate.site_template_options, :description => 'Used to correctly preview pages in the page editor' %>
 <%= f.text_field :preview_wrapper, :description => 'ID or Class name to wrap previewed content\nUse #div_id or .div_class_name to specify the id or the CSS class' %> 
 
-
-
 <%= f.check_boxes :add_to_site, [["Run the add to site wizard".t,true]],:single => true -%>
 <%= f.spacer %> 
 
 <%= f.cancel_submit_buttons 'Cancel','Submit' %> 
 
 <% end -%>
-
-
-
 </div>

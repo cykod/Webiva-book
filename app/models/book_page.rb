@@ -26,7 +26,6 @@ class BookPage < DomainModel
   after_move :path_update
   after_save :force_resave_children
   after_save :auto_save_version
- # after_update :auto_save_version
 
   content_node :container_type => 'BookBook', :container_field => 'book_book_id',
   :except => Proc.new { |pg| !pg.parent_id }, :published => :published
@@ -59,10 +58,8 @@ class BookPage < DomainModel
     end
   end
 
- 
- 
   def full_title
-    self.book_book.name.to_s + ": " + self.name.to_s
+    "#{self.book_book.name}: #{self.name}"
   end
 
   def content_description(language)
@@ -129,8 +126,7 @@ class BookPage < DomainModel
   end
 
   def save_version(editor,version_body,v_type,v_status,ipaddress,orig_rev)
-    self.book_page_versions.create(
-                                   :name => self.name,
+    self.book_page_versions.create(:name => self.name,
                                    :book_book_id => self.book_book_id,
                                    :base_version_id => orig_rev,
                                    :body => version_body,
@@ -227,73 +223,55 @@ class BookPage < DomainModel
     end
  end
   protected
+
   def create_url
-    logger.warn('Create URL')
-    if  self.book_book.id_url?
+    if self.book_book.id_url?
       self.url = self.id.to_s
     else
-      name_base = self.name.downcase.gsub(/[ _]+/,"-").gsub(/[^a-z+0-9\-]/,"")
+      name_base = SiteNode.generate_node_path(self.name)
 
       if name_base != self.url
-
         cnt = 1
         name_try = name_base
 
         while check_duplicate(name_try)
           name_try = name_base + '-' + cnt.to_s
-
           cnt += 1
         end
 
         self.url = name_try
-
       end
-
     end
 
-    if self.parent_id || self.book_book.book_type == 'flat'
-      path_update(true)
-    end
-    
+    self.path_update(true)
   end
 
   def path_update(skip_save=false)
-    logger.warn('Path Update')
-    if self.book_book.flat_url? || self.book_book.id_url?
-      self.path = "/" + self.url.to_s
-         logger.warn(self.path)
-
+    if self.book_book.nested_url? && self.parent && self.parent != self.book_book.root_node
+      self.path = "#{self.parent.path}/#{self.url}"
     else
-      self.path = self.parent.path.to_s + "/" + self.url.to_s
+      self.path = "/#{self.url}"
     end
-    
-    if self.path_changed? && !self.book_book.flat_url?
+
+    if self.path_changed? && self.book_book.nested_url?
       @force_resave_children = true
       self.save unless skip_save
     end
-    
   end
 
   def force_resave_children
-    logger.warn('Force Resave Children')
     if @force_resave_children
       self.children.each do |child|
         child.save
       end
+      @force_resave_children = false
     end
   end
 
- 
-
   def check_duplicate(name)
-    if self.book_book.flat_url?
-      if self.id == nil
-      self.book_book.book_pages.find(:first,:conditions => ['`url`=? ',name])
-      else
-        self.book_book.book_pages.find(:first,:conditions => ['`url`=? AND book_pages.id != ? ',name,self.id])
-      end
-    else
-      self.book_book.book_pages.find(:first,:conditions => ['`url`=? AND book_pages.id != ? AND parent_id=? ',name,self.id,self.parent_id])
-    end
+    scope = self.book_book.book_pages.scoped(:conditions => {:url => name})
+    scope = scope.scoped(:conditions => ['book_pages.id != ?', self.id]) if self.id
+    scope = scope.scoped(:conditions => {:parent_id => self.parent_id}) if self.book_book.nested_url? && self.parent_id
+    scope.first
   end
 end

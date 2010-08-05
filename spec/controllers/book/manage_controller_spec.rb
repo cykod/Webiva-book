@@ -157,30 +157,26 @@ describe Book::ManageController do
   describe 'versions' do
     before(:each) do 
       mock_editor
-      chapter_book
-      flat_book
     end
     
     it 'should create a version for a page in a chapter book' do
-      
-      @parent = @cb.book_pages.find_by_parent_id(nil)
+      chapter_book
+
       assert_difference 'BookPageVersion.count', 1 do
-        post( 'add_to_tree', :path => [@cb.id], :page_id => @parent.id)
+        post( 'add_to_tree', :path => [@cb.id], :page_id => @cb.root_node.id)
         @rev = @cb.book_page_versions.find(:first, :order => 'id desc')
       end
     end
-    it 'should create a version for a new flat book page' do
-      assert_difference 'BookPageVersion.count', 1 do
-      post( 'save_page', :path => [@flatbook.id], :page_id => @page1.id, :page => {:name => @rand_name_f, :body => "1"})
-      prev = @cb.book_page_versions.find(:first, :order => 'id desc')
 
+    it 'should create a version for a new flat book page' do
+      flat_book
+
+      assert_difference 'BookPageVersion.count', 1 do
+        post( 'save_page', :path => [@flatbook.id], :page_id => @page1.id, :page => {:name => @rand_name_f, :body => "1"})
+        prev = @flatbook.book_page_versions.find(:first, :order => 'id desc')
       end
     end
-    
   end
-  
-  
-  
 end
 
 

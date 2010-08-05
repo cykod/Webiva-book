@@ -23,6 +23,7 @@ class BookBook < DomainModel
 
   validates_presence_of :name
   validates_format_of :preview_wrapper, :allow_blank => true, :with => /^(\.|\#)/
+
   attr_protected :url_scheme, :book_type
 
   content_node_type :book, "BookPage", :content_name => :name,:title_field => :full_title, :url_field => :url
@@ -52,8 +53,11 @@ class BookBook < DomainModel
   def id_url?
     self.url_scheme == 'id'
   end
-  
-  
+
+  def nested_url?
+    self.url_scheme == 'nested'
+  end  
+
   def create_root_node
     self.book_pages.create(:name => 'Root', :created_by_id => self.created_by_id) unless book_type == 'flat'
   end
@@ -103,8 +107,9 @@ class BookBook < DomainModel
   end
 
   def preview_wrapper_end; '</div>'; end
- def export_book(args) 
-      results = { }
+
+  def export_book(args) 
+    results = { }
     # args = { :book_id, :export_download, :export_format, :range_start, :range_end }
     
     results[:completed] = false
@@ -132,8 +137,8 @@ class BookBook < DomainModel
     
     results
   end
- def do_import(args,user) #:nodoc:
-   
+
+  def do_import(args,user) #:nodoc:
    results = { }
    
    
@@ -161,7 +166,8 @@ class BookBook < DomainModel
  Workling.return.set(self.id,results)
  
   end
- def check_header(f)     
+
+  def check_header(f)     
     reader = CSV.open(f, "r")
     @header = reader.shift
     @@fields = ["id","name","description","published","body","parent_id"]

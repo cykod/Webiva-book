@@ -3,70 +3,65 @@
 
 class Book::ManageController < ModuleController
   helper 'book'
+
   include BookHelper
+
   component_info 'Book'
   
-  cms_admin_paths 'content',  "Versions" =>  {  :action => 'index'}
-
+  cms_admin_paths 'content'
 
   helper :active_tree
 
-  active_table :version_table, BookPageVersion, 
-  [:check,:id,:created_by_id,hdr(:string, :version_status, :label => 'Status'),
-   hdr(:string,:version_type, :label => 'Type'),:created_at]
+  # need to include 
+  include ActiveTable::Controller
+  active_table :version_table,
+               BookPageVersion, 
+               [ :check,
+                 :id,
+                 :created_by_id,
+                 hdr(:string, :version_status, :label => 'Status'),
+                 hdr(:string,:version_type, :label => 'Type'),
+                 :created_at
+               ]
   
   
   
   def book
-    if (params[:path][0] != nil) 
-      
-      @book = BookBook.find_by_id(params[:path][0]) 
+    if params[:path][0]
+      @book = BookBook.find params[:path][0].to_i
+      cms_page_path ['Content'], "Configure %s" / @book.name
     else 
-      @book = BookBook.new(params[:book])|| { :add_to_site => true }
+      @book = BookBook.new :add_to_site => true
+      @book.created_by_id = myself.id
+      cms_page_path ['Content'], 'Create a book'
     end
-    cms_page_path ['Content'], @book.id ? [ "Configure %s",nil,@book.name ] : 'Create a book'
 
     if request.post? && params[:book]
 
       if params[:commit]
-        @new_book = @book.id ? false : true
-        if @new_book 
-          @book.book_type = params[:book][:book_type]
+        unless @book.id
           @book.url_scheme = params[:book][:url_scheme]
-          @book.created_by_id = myself.id
-          if(@book.save)
-            if @book.add_to_site
-              redirect_to :controller => '/book/wizard', :book_id => @book.id
-              return
-            elsif  @book.add_to_site.blank?
-              redirect_to :controller => '/book/manage', :path => @book.id
-              return 
-            end
+          @book.book_type = params[:book][:book_type]
+        end
+
+        if @book.update_attributes(params[:book])
+          if ! @book.add_to_site.blank?
+            redirect_to BookWizard.wizard_url.merge(:book_id => @book.id, :version => SiteVersion.current.id)
+          else
+            redirect_to :action => 'edit', :path => @book.id
           end
         end
-        if @book.update_attributes(params[:book])
-          redirect_to :action => 'edit', :path => @book.id
-        end
+      elsif @book.id
+        redirect_to :action => 'edit', :path => @book.id
       else
-        if @book.id
-          redirect_to :action => 'edit', :path => @book.id
-        else
-          redirect_to :controller => '/content'
-        end
-        return
+        redirect_to :controller => '/content'
       end
     end
-    
   end
 
- 
   def edit
-
     @book = BookBook.find(params[:path][0])
-
-    if params[:path][1]
-      @page = @book.book_pages.find_by_id(params[:path][1])
-    end
+    @page = @book.book_pages.find_by_id(params[:path][1]) if params[:path][1]
 
     @chapters = @book.nested_pages
     
@@ -77,11 +72,9 @@ class Book::ManageController < ModuleController
       @chapters = @book.nested_pages
     end
     
-    cms_page_path ['Content'], [ 'Edit %s',nil,@book.name ]
+    cms_page_path ['Content'], 'Edit %s' / @book.name
 
     require_js('scriptaculous-sortabletree/sortable_tree.js')
-    
-
   end
    
   def update_tree
@@ -278,12 +271,12 @@ class Book::ManageController < ModuleController
   def view_wiki_edits
     
     @book = BookBook.find(params[:path][0])
-    @vers_body = BookPageVersion.find_by_id(params[:version_id]) 
-    @orig_body = BookPageVersion.find_by_id(@vers_body.base_version_id) 
-    @page = @book.book_pages.find_by_id(@vers_body.book_page_id)
+    @vers_body = BookPageVersion.find(params[:version_id]) 
+    @orig_body = BookPageVersion.find_by_id(@vers_body.base_version_id) || @vers_body
+    @page = @book.book_pages.find(@vers_body.book_page_id)
 
     @wiki_body = @page.page_diff(@vers_body.body,@orig_body)
-    @escaped_body = pre_escape(@wiki_body||"No Comparison Available")
+    @escaped_body = pre_escape @wiki_body
     @diff_body = output_diff_pretty(@escaped_body)
     @review_button = false unless @vers_body.version_status == 'submitted'
 
@@ -360,20 +353,27 @@ class Book::ManageController < ModuleController
     end
     
   end
-  active_table :bulkview_table, BookPage, 
-  [:check, hdr(:boolean, :published, :label => 'P'),hdr(:order,:lft, :label => 'Parent'),:name,hdr(:string,:description,:label => 'Page Description'),:created_at]
+
+  active_table :bulkview_table,
+               BookPage, 
+               [:check,
+                hdr(:boolean, :published),
+                hdr(:order,:lft, :label => 'Parent'),
+                :name,
+                hdr(:string,:description,:label => 'Page Description'),
+                :created_at
+               ]
   
   def bulk_edit
+    @book = BookBook.find(params[:path][0])
 
-    @book ||= BookBook.find(params[:path][0])
-
-    cms_page_path ['Content'], [ 'Bulk Edit Pages in %s',nil,@book.name ]
+    cms_page_path ['Content'], 'Bulk Edit Pages in %s' / @book.name
 
     display_bulkview_table(display)
-    
   end
+
   def display_bulkview_table(display=true)
-    @book ||= BookBook.find(params[:path][0])
+    @book = BookBook.find(params[:path][0])
     
     active_table_action('bulkview') do |act,pids|
       case act

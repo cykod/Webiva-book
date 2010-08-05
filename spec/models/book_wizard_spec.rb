@@ -17,17 +17,15 @@ describe BookWizard do
   it 'should add a book to the book-display page' do
     root_node = SiteVersion.default.root_node.add_subpage('book-test')
 
-    wizard = BookWizard.new(
-                                  :book_id => @book.id,
-                                  :add_to_id => root_node.id,
-                                  :add_to_subpage => 'book'
-                                  )
-    wizard.add_to_site!
-    @bookpage = SiteNode.find_by_node_path('/book')
+    wizard = BookWizard.new(:book_id => @book.id,
+                            :add_to_id => root_node.id,
+                            :add_to_subpage => 'book'
+                            )
+    wizard.run_wizard
+    @bookpage = SiteNode.find_by_node_path('/book-test/book')
     @bookpage.should_not be_nil
-    para = @bookpage.page_revisions[0].page_paragraphs
-    para[0].display_type.should == 'html'
-    para[1].display_type.should == 'content'
+    para = @bookpage.live_revisions[0].page_paragraphs
+    para[0].display_type.should == 'content'
   end
 
 
@@ -41,9 +39,10 @@ describe BookWizard do
                             :opts => ["chapters"]
 
                                   )
-    wizard.add_to_site!
-    SiteNode.find_by_node_path('/book').should_not be_nil
+    wizard.run_wizard
+    SiteNode.find_by_node_path('/book-test/book').should_not be_nil
   end
+
   it 'should add a comments block to book pages' do
     root_node = SiteVersion.default.root_node.add_subpage('book-test')
 
@@ -54,14 +53,13 @@ describe BookWizard do
                             :wiki_page_url => 'edit2',
                             :opts => ["","comments"]
                             )
-    wizard.add_to_site!
-    @bookpage = SiteNode.find_by_node_path('/book')
+    wizard.run_wizard
+    @bookpage = SiteNode.find_by_node_path('/book-test/book')
     @bookpage.should_not be_nil
     
-    para = @bookpage.page_revisions[0].page_paragraphs
-    para[0].display_type.should == 'html'
-    para[1].display_type.should == 'content'
-    para[2].display_type.should == 'comments'
+    para = @bookpage.live_revisions[0].page_paragraphs
+    para[0].display_type.should == 'content'
+    para[1].display_type.should == 'comments'
 
   end
   it 'should add a wiki to a book on the site' do
@@ -75,14 +73,12 @@ describe BookWizard do
                             :opts => ["wiki"]
 
                                   )
-    wizard.add_to_site!
-    SiteNode.find_by_node_path('/book').should_not be_nil
-    @wikipage = SiteNode.find_by_node_path('/book/edit2')
+    wizard.run_wizard
+    SiteNode.find_by_node_path('/book-test/book').should_not be_nil
+    @wikipage = SiteNode.find_by_node_path('/book-test/book/edit2')
     @wikipage.should_not be_nil
 
-    para = @wikipage.page_revisions[0].page_paragraphs
-    para[0].display_type.should == 'html'
-    para[1].display_type.should == 'wiki_editor'
-    
+    para = @wikipage.live_revisions[0].page_paragraphs
+    para[0].display_type.should == 'wiki_editor'
   end
 end
