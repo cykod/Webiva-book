@@ -12,9 +12,7 @@ class BookPageVersion < DomainModel
 
   serialize :body
   named_scope :latest_revision, :conditions => {:version_type => 'admin editor'}, :order => 'id DESC', :limit => 1
-  
- 
-  
+
   def replace_page_links(code)
     cd = code.gsub(/\[\[([^\]]+)\]\](\(([^\)]+)\))?/) do |mtch|
       titleinbrackets = $1 
@@ -30,6 +28,5 @@ class BookPageVersion < DomainModel
     end
     cd
   end
-  
 end
 
