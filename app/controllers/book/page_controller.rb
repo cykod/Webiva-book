@@ -37,7 +37,8 @@ editor_for :wiki_editor, :name => "Wiki Editor", :feature => 'book_page_wiki_edi
     boolean_options :show_first_page, :enable_wiki
     page_options :edit_page_id
 
-    
+    canonical_paragraph "BookBook", :book_id
+
   end
   
   class WikiEditorOptions < HashModel
