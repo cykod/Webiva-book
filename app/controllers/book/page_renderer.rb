@@ -126,33 +126,33 @@ class Book::PageRenderer < ParagraphRenderer
   end
 
  def wiki_editor
-
-
     @options = paragraph_options(:wiki_editor)
 
     @book = find_book
 
-    return render_paragraph :text => '' unless @book
-     if @book.flat_url?
-      unless params[:ref].blank? 
-        @page = @book.book_pages.find_by_reference_and_published(params[:ref], true)
-      end 
-      unless @page 
-        page_conn_type,page_url = page_connection(:flat_chapter)
-        if @options.show_first_page && page_url.blank?
-          @page = @book.first_page
-        else
-          
-          @page = @book.book_pages.find_by_url_and_published(page_url,true,:conditions => 'parent_id IS NOT NULL')
-        end
+   return render_paragraph :text => '' unless @book
 
-        if !@page && @options.allow_create && !page_url.blank?
-          @page = @book.book_pages.build(:name => page_url.titleize)
-        end
-      end
-    else
-      raise 'Unsupported...'
-    end
+   if @book.flat_url?
+     unless params[:ref].blank? 
+       @page = @book.book_pages.find_by_reference_and_published(params[:ref], true)
+     end 
+
+     unless @page 
+       page_conn_type,page_url = page_connection(:flat_chapter)
+
+       if @options.show_first_page && page_url.blank?
+         @page = @book.first_page
+       else
+         @page = @book.book_pages.find_by_url_and_published(page_url,true,:conditions => 'parent_id IS NOT NULL')
+       end
+
+       if !@page && @options.allow_create && !page_url.blank?
+         @page = @book.book_pages.build(:name => page_url.titleize)
+       end
+     end
+   else
+     return render_paragraph :text => 'Unsupported...'
+   end
 
     @ipaddress = request.remote_ip
    
