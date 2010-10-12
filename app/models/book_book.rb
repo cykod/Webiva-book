@@ -14,8 +14,8 @@ class BookBook < DomainModel
   attr_accessor :add_to_site
 
   has_options :book_type, [ [ 'Chapter Based', 'chapter'],
-                            [ 'Flat','flat' ]
-                          ]
+    [ 'Flat','flat' ]
+  ]
 
   belongs_to :style_template, :class_name => 'SiteTemplate', :foreign_key => 'style_template_id'
   
@@ -31,7 +31,7 @@ class BookBook < DomainModel
   
   def content_admin_url(book_page_id)
     {  :controller => '/book/manage', :action => 'edit', :path => [ self.id, book_page_id ],
-       :title => 'Edit Book Page'.t}
+      :title => 'Edit Book Page'.t}
   end
 
   def content_type_name
@@ -113,7 +113,7 @@ class BookBook < DomainModel
     # args = { :book_id, :export_download, :export_format, :range_start, :range_end }
     
     results[:completed] = false
-        
+    
     
     @pages = self.book_pages.find(:all, :conditions => ["name != ?",'Root'])
 
@@ -124,11 +124,11 @@ class BookBook < DomainModel
     filename  = tmp_path + "domain:" + dom_id + "-book:" + self.id.to_s + "_book_export"
     results[:filename] = filename
 
-     
+    
     CSV.open(filename,'w') do |writer|
       @pages.each_with_index do |page,idx|
         page.export_csv(writer,  :header => idx == 0,
-                                 :include => args[:export_options])
+                        :include => args[:export_options])
       end
     end
     results[:entries] = @pages.length
@@ -138,93 +138,71 @@ class BookBook < DomainModel
     results
   end
 
-  def do_import(args,user) #:nodoc:
-   results = { }
-   
-   
-   results[:completed] = false
+  def do_import(args={}) #:nodoc:
+    file = DomainFile.find_by_id args[:domain_file_id]
+    user = EndUser.find_by_id args[:user_id]
 
-   count = -1
-   CSV.open(args,"r",",").each do |row|
-     count += 1 if !row.join.blank?
-   end
-   count = 1 if count < 1
-   results[:entries] = count
-   
-   results[:initialized] = true
-   results[:imported] = 0
-   
-   
-   
-   
-   self.parse_csv(args,user) do |imported,errors|
-     results[:imported] += imported
-     Workling.return.set(args[:uid],results)
-   end
- 
- results[:completed] = true
- Workling.return.set(self.id,results)
- 
-  end
+    return unless file
 
-  def check_header(f)     
-    reader = CSV.open(f, "r")
-    @header = reader.shift
-    @@fields = ["id","name","description","published","body","parent_id"]
-    if @header == @@fields
-      return true
-    else
-      return false
+    results = Workling.return.get(args[:uid])
+
+    count = 0
+    CSV.open(file.filename, "r", ",").each do |row|
+      count += 1 if !row.join.blank?
     end
+    count = 1 if count < 1
+    results[:entries] = count
+
+    results[:initialized] = true
+    results[:imported] = 0
+
+    Workling.return.set(args[:uid], results)
+
+    self.parse_csv(file.filename,user) do |imported,errors|
+      results[:imported] += imported
+      Workling.return.set(args[:uid], results) if (results[:imported] % 10) == 0
+    end
+
+    results
   end
 
- def parse_csv(args,user) 
-   @@fields = [:id,:name,:description,:published,:body,:parent_id]
-   reader = CSV.open(args,"r",",")
-   reader.shift
-   reader.each do |row|
-     attr = {}
-     @@fields.each_with_index { |field,idx| attr[field] = row[idx] }
-     
-     
-     @page = self.book_pages.find_by_id(attr[:id]) 
-     @page_parent = self.book_pages.find_by_id(attr[:parent_id])
-     if @page_parent 
-       @page_name = self.book_pages.find_by_name_and_parent_id(attr[:name],@page_parent.id)
-     else
-       @page_name = self.book_pages.find_by_name(attr[:name])
-     end
+  def parse_csv(filename, user)
+    @@fields = [:id,:name,:description,:published,:body,:parent_id]
+    reader = CSV.open(filename, "r", ",")
+    reader.shift
+    reader.each do |row|
+      attr = {}
+      @@fields.each_with_index { |field,idx| attr[field] = row[idx] }
 
-     if @page
-       @page.update_attributes(attr.slice(:name,
-                                          :description,
-                                          :published,
-                                          :body
-                                          ))
-       @page.move_to_child_of(@page_parent || self.root_node) unless flat_book?
-       
-     elsif @page_name
-       @page_name.update_attributes(attr.slice(
+      @page = self.book_pages.find_by_id(attr[:id]) 
+      @page_parent = self.book_pages.find_by_id(attr[:parent_id])
+      if @page_parent 
+        @page ||= self.book_pages.find_by_name_and_parent_id(attr[:name], @page_parent.id)
+      else
+        @page ||= self.book_pages.find_by_name(attr[:name])
+      end
+
+      if @page
+        @page.update_attributes(attr.slice(:name,
+                                           :description,
+                                           :published,
+                                           :body
+                                           ))
+        @page.move_to_child_of(@page_parent || self.root_node) unless flat_book?
+        
+      else
+        @page = self.book_pages.new(attr.slice(:name,
                                                :description,
                                                :published,
                                                :body
                                                ))
-       @page_name.move_to_child_of(@page_parent || self.root_node) unless flat_book?
-       
-     else
-       @page = self.book_pages.new(attr.slice(:name,
-                                              :description,
-                                              :published,
-                                              :body
-                                              ))
-       @page.editor = user
-       @page.save
-       @page.move_to_child_of(@page_parent || self.root_node) unless flat_book?
-       
-       
-     end
-     
-   end
- end
- 
+        @page.editor = user
+        @page.save
+        @page.move_to_child_of(@page_parent || self.root_node) unless flat_book?
+
+      end
+
+      yield 1, nil if block_given?
+    end
+  end  
 end

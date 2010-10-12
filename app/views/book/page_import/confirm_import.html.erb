@@ -1,0 +1,23 @@
+
+<div class='admin_content'>
+
+<% admin_form_for :import, nil do |f| %>
+  <%= f.cancel_submit_buttons 'Cancel', 'Confirm' %>
+<% end %>
+
+<br/>
+
+<table class='active_table'>
+
+  <tr><th>Status</th> <th>Name</th></tr>
+  <% @import_pages.each_with_index do |pg,st| %>
+    <tr><td><%= pg[1] %></td><td><%= pg[0] %></td></tr>
+  <% end %>
+
+</table>
+
+<% admin_form_for :import, nil do |f| %>
+  <%= f.cancel_submit_buttons 'Cancel', 'Confirm' %>
+<% end %>
+
+</div>
