@@ -1,37 +1,32 @@
 # Copyright (C) 2010 Cykod LLC.
 
+require 'csv'
 
 class BookBook < DomainModel
-
   has_domain_file :cover_file_id
   has_domain_file :thumb_file_id
+  belongs_to :created_by, :class_name => 'EndUser', :foreign_key => :created_by_id
 
-  has_many :book_page_versions, :dependent => :destroy, :order => 'book_page_versions.name'
+  has_many :book_page_versions, :order => 'book_page_versions.name'
   has_many :book_pages, :dependent => :destroy, :order => 'book_pages.name'
-
-  after_create :create_root_node
 
   attr_accessor :add_to_site
 
-  has_options :book_type, [ [ 'Chapter Based', 'chapter'],
-    [ 'Flat','flat' ]
-  ]
+  has_options :book_type, [['Chapter Based', 'chapter'], ['Flat','flat']]
 
   belongs_to :style_template, :class_name => 'SiteTemplate', :foreign_key => 'style_template_id'
   
-  has_options :url_scheme, [ ['Flat','flat'],['Nested','nested'],['ID','id']]
+  has_options :url_scheme, [['Flat','flat'], ['Nested','nested'], ['ID','id']]
 
   validates_presence_of :name
   validates_format_of :preview_wrapper, :allow_blank => true, :with => /^(\.|\#)/
 
   attr_protected :url_scheme, :book_type
 
-  content_node_type :book, "BookPage", :content_name => :name,:title_field => :full_title, :url_field => :url
+  content_node_type :book, "BookPage", :content_name => :name, :title_field => :full_title, :url_field => :url
 
-  
   def content_admin_url(book_page_id)
-    {  :controller => '/book/manage', :action => 'edit', :path => [ self.id, book_page_id ],
-      :title => 'Edit Book Page'.t}
+    {:controller => '/book/manage', :action => 'edit', :path => [self.id, book_page_id], :title => 'Edit Book Page'.t}
   end
 
   def content_type_name
@@ -39,9 +34,10 @@ class BookBook < DomainModel
   end
 
   def root_node
-    @root_node ||= self.book_pages.find(:first,:conditions => 'parent_id IS NULL', :order => 'book_pages.id')
-
+    return nil if self.flat_book?
+    @root_node ||= self.book_pages.first(:conditions => 'parent_id IS NULL AND name = "Root"') || self.create_root_node
   end
+
   def flat_book?
     self.book_type == 'flat'
   end
@@ -59,40 +55,27 @@ class BookBook < DomainModel
   end  
 
   def create_root_node
-    self.book_pages.create(:name => 'Root', :created_by_id => self.created_by_id) unless book_type == 'flat'
-  end
-
-  def flat_pages
-    page_hash = {self.root_node.id => self.root_node }
-
+    self.book_pages.create(:name => 'Root', :created_by_id => self.created_by_id)
   end
 
   # get a nested structure with 1 DB call
   def nested_pages
-
     if book_type == 'flat'
-
       self.book_pages
     else
-      page_hash = {self.root_node.id => self.root_node }
+      page_hash = {self.root_node.id => self.root_node}
 
       self.root_node.descendants.each do |nd|
-        page_hash[nd.parent_id].child_cache << nd
+        page_hash[nd.parent_id].child_cache << nd if page_hash[nd.parent_id]
         page_hash[nd.id] = nd
       end
 
-      
       page_hash[root_node.id].child_cache
     end
   end
   
   def  first_page
-    if book_type == 'flat'
-      self.book_pages.find(:first)
-    else
-      self.root_node.children[0]
-    end
-    
+    self.flat_book? ? self.book_pages.first : self.root_node.children[0]
   end
   
   def preview_wrapper_start
@@ -108,34 +91,37 @@ class BookBook < DomainModel
 
   def preview_wrapper_end; '</div>'; end
 
-  def export_book(args) 
-    results = { }
-    # args = { :book_id, :export_download, :export_format, :range_start, :range_end }
-    
-    results[:completed] = false
-    
-    
-    @pages = self.book_pages.find(:all, :conditions => ["name != ?",'Root'])
+  def export_book(args={}) 
+    @pages = self.flat_book? ? self.book_pages : self.book_pages.find(:all, :conditions => "parent_id IS NOT NULL")
 
     tmp_path = "#{RAILS_ROOT}/tmp/export/"
     FileUtils.mkpath(tmp_path)
-    
-    dom_id =  Domain.find(DomainModel.active_domain_id).id.to_s
-    filename  = tmp_path + "domain:" + dom_id + "-book:" + self.id.to_s + "_book_export"
-    results[:filename] = filename
+    filename  = tmp_path + DomainModel.active_domain_id.to_s + "_book_export.csv"
 
-    
     CSV.open(filename,'w') do |writer|
       @pages.each_with_index do |page,idx|
-        page.export_csv(writer,  :header => idx == 0,
-                        :include => args[:export_options])
+        page.export_csv writer, :header => idx == 0
       end
     end
-    results[:entries] = @pages.length
-    results[:type] = 'csv'
-    results[:completed] = 1
-    
-    results
+
+    domain_file = DomainFile.save_temporary_file filename, :name => sprintf("%s-%s_%s.%s",'Book'.t,self.name,Time.now.strftime("%Y_%m_%d"),'csv')
+
+    { :filename => filename,
+      :domain_file_id => domain_file.id,
+      :entries => @pages.length,
+      :type => 'text/csv',
+      :completed => 1
+    }
+  end
+
+  def import_book(filename, user, options={})
+    filename = filename.filename if filename.is_a?(DomainFile)
+    reader = CSV.open(filename, "r", ",")
+    reader.shift
+    reader.each do |row|
+      BookPage.import_csv self, user, row, options
+      yield 1, nil if block_given?
+    end
   end
 
   def do_import(args={}) #:nodoc:
@@ -148,7 +134,7 @@ class BookBook < DomainModel
 
     count = 0
     CSV.open(file.filename, "r", ",").each do |row|
-      count += 1 if !row.join.blank?
+      count += 1 unless row.join.blank?
     end
     count = 1 if count < 1
     results[:entries] = count
@@ -158,7 +144,7 @@ class BookBook < DomainModel
 
     Workling.return.set(args[:uid], results)
 
-    self.parse_csv(file.filename,user) do |imported,errors|
+    self.import_book(file.filename, user) do |imported, errors|
       results[:imported] += imported
       Workling.return.set(args[:uid], results) if (results[:imported] % 10) == 0
     end
@@ -166,43 +152,4 @@ class BookBook < DomainModel
     results
   end
 
-  def parse_csv(filename, user)
-    @@fields = [:id,:name,:description,:published,:body,:parent_id]
-    reader = CSV.open(filename, "r", ",")
-    reader.shift
-    reader.each do |row|
-      attr = {}
-      @@fields.each_with_index { |field,idx| attr[field] = row[idx] }
-
-      @page = self.book_pages.find_by_id(attr[:id]) 
-      @page_parent = self.book_pages.find_by_id(attr[:parent_id])
-      if @page_parent 
-        @page ||= self.book_pages.find_by_name_and_parent_id(attr[:name], @page_parent.id)
-      else
-        @page ||= self.book_pages.find_by_name(attr[:name])
-      end
-
-      if @page
-        @page.update_attributes(attr.slice(:name,
-                                           :description,
-                                           :published,
-                                           :body
-                                           ))
-        @page.move_to_child_of(@page_parent || self.root_node) unless flat_book?
-        
-      else
-        @page = self.book_pages.new(attr.slice(:name,
-                                               :description,
-                                               :published,
-                                               :body
-                                               ))
-        @page.editor = user
-        @page.save
-        @page.move_to_child_of(@page_parent || self.root_node) unless flat_book?
-
-      end
-
-      yield 1, nil if block_given?
-    end
-  end  
 end

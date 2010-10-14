@@ -1,19 +1,27 @@
 <% action_panel do |p| -%>
   <%= p.link 'Configure Book',:action => 'book',:path => [ @book.id ], :icon => 'configure.gif' %> 
   <%= p.link 'Delete Book', :action => 'delete', :path => [ @book.id ], :icon => 'delete.gif', :right => true %>
-    <%= p.link 'Import Book', :controller => 'page_import', :action => 'index',  :path => [ @book.id ], :icon => 'configure.gif' %> 
-  <%= p.link 'Export Book', :action => 'export',:path => [ @book.id ], :icon => 'configure.gif' %> 
+  <%= p.link 'Import Book', :controller => 'page_import', :action => 'index',  :path => [ @book.id ], :icon => 'configure.gif' %> 
+  <% p.custom do %>
+    <a href="javascript:void(0);" id="export_book"><%= theme_image_tag('icons/title_actions/configure.gif') %> Export Book</a>
+    <span id="export_book_status"></span>
+  <% end %>
   <%= p.link 'Bulk Edit Pages',:action => 'bulk_edit',:path => [ @book.id ], :icon => 'configure.gif' %> 
+
+  <% if @book.book_type == 'flat' -%>
+    <%= p.link 'Add Page', {:url => 'javascript:void();', :icon => 'add.gif'}, :onclick => 'ChapterTree.select("");' %> 
+  <% end -%>
 <% end -%>
+
+<script>
+new WebivaExporter({button: "#export_book",
+                    url: "<%= url_for :action => 'generate_export', :path => @book.id %>"
+                   });
+</script>
 
 <hr/>
-<% if @book.book_type == 'flat'%>
-<% action_panel do |p| -%>
-  <%= p.link 'Add Page', {:url => 'javascript:void(0);', :icon => 'add.gif'}, :onclick => 'ChapterTree.select("");' %> 
-   
-<% end -%>
 
-<% else %>
+<% unless @book.book_type == 'flat' -%>
 <div class='admin_content'>
 <div class='add_node_group'>
 

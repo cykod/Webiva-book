@@ -52,7 +52,9 @@ end
     mock_editor
 
     @rand_name_f = random_string    
-    @flatbook =  BookBook.create(:book_type => 'flat', :name => 'flatbook', :created_by_id => @myself.id)
+    @flatbook =  BookBook.new(:name => 'flatbook', :created_by_id => @myself.id)
+    @flatbook.book_type = 'flat' # attr_protected
+    @flatbook.save
     @page1 = @flatbook.book_pages.create(:name => 'a flat one' , :created_by_id => @myself.id)
     @page2 = @flatbook.book_pages.create(:name => 'b flat two' , :created_by_id => @myself.id)
     @page3 = @flatbook.book_pages.create(:name => 'c flat three', :created_by_id => @myself.id)

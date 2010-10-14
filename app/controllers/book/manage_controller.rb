@@ -134,10 +134,10 @@ class Book::ManageController < ModuleController
     @page.edit_type = nil
     @page.v_status = "auto"
     @page.remote_ip = @ipaddress
-    if @page.book_page_versions.latest_revision == []
-         @page.prev_version = nil
+    if @page.book_page_versions.latest_revision.empty?
+      @page.prev_version = nil
     else 
-          @page.prev_version = @page.book_page_versions.latest_revision[0].id
+      @page.prev_version = @page.book_page_versions.latest_revision[0].id
     end
     @page.save
     @updated=true;
@@ -163,63 +163,20 @@ class Book::ManageController < ModuleController
       @prev_version =  @page.book_page_versions.latest_revision || nil
       @version = @page.save_version(myself, params[:page][:body], 'page', 'draft', @ipaddress,@prev_version[0].id)      
     end
-  end 
-  ############# export
-  
-  def export
-    @book ||= BookBook.find(params[:path][0])
-    cms_page_path ['Content'], [ 'Export Pages in %s',nil,@book.name ]
-    @export_options =  [[ 'CSV - Comma Separated Values', 'csv' ]]   
-    @export = DefaultsHashObject.new(:export_download => 'all', :export_format => 'csv')
   end
+
   def generate_export
-    @book = BookBook.find(params[:path][0])
-    worker_key = @book.run_worker(:export_book,
-                                  :export_download => params[:export][:download],
-                                  :export_format => params[:export][:export_format]
-                                  )
-    
-    
-    session[:book_download_worker_key] = worker_key
-    
+    @book = BookBook.find params[:path][0]
+    session[:download_worker_key] = @book.run_worker(:export_book)
     render :nothing => true
-    
-  end
-  def status   
-    if(session[:book_download_worker_key]) 
-      results =  Workling.return.get(session[:book_download_worker_key])
-      
-      @completed = results[:completed] if results
-    end
   end
 
-
-  def download_file
-    @book =  BookBook.find(params[:path][0])
-    if(session[:book_download_worker_key]) 
-      results = Workling.return.get(session[:book_download_worker_key])
-      
-      send_file(results[:filename],
-                :stream => true,
-                :type => "text/" + results[:type],
-                :disposition => 'attachment',
-                :filename => sprintf("%s_%d.%s",@book.name.humanize,Time.now.strftime("%Y_%m_%d"),results[:type])
-                )
-      
-      session[:book_download_worker_key] = nil
-    else
-      render :nothing => true
-    end
-    
-  end
-  ############# export
   def search
     @book =  BookBook.find(params[:path][0])
     @pages = @book.book_pages.find(:all,:conditions => [ 'name LIKE ?',"%#{params[:search]}%" ],:order => 'name')
-
   end
-  def preview_page
 
+  def preview_page
     @book =  BookBook.find(params[:path][0])
 
     @page = @book.book_pages.find_by_id(params[:page_id]) || @book.book_pages.build

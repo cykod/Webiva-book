@@ -1,8 +1,6 @@
 require  File.expand_path(File.dirname(__FILE__)) + "/../../../../../../spec/spec_helper"
 require  File.expand_path(File.dirname(__FILE__)) + "/../../book_spec_helper.rb"
 
-
-
 describe Book::ManageController do
   include BookSpecHelper
   reset_domain_tables :book_books, :book_pages, :book_page_versions, :domain_files
@@ -98,20 +96,20 @@ describe Book::ManageController do
   end
   
   
-    describe 'book1' do 
+  describe 'book1' do 
     
-      before(:each) do 
-        mock_editor
-        flat_book
+    before(:each) do 
+      mock_editor
+      flat_book
+    end
+    
+    it 'should create a flat book' do
+      assert_difference 'BookBook.count', 1 do
+        post( 'book', :path => [], :commit => 'Submit', :book => {:cover_file_id => '', :name => @rand_name_f, :url_scheme => 'flat', :thumb_file_id => '', :preview_wrapper => '', :book_type => 'flat', :description => '', :style_template_id => '', :image_folder_id => '', :content_filter => 'markdown'} ,:created_by_id => @myself.id)
+        @newflatbook = BookBook.find(:last)
+        @newflatbook.name.should == @rand_name_f
       end
       
-      it 'should create a flat book' do
-        assert_difference 'BookBook.count', 1 do
-          post( 'book', :path => [], :commit => 'Submit', :book => {:cover_file_id => '', :name => @rand_name_f, :url_scheme => 'flat', :thumb_file_id => '', :preview_wrapper => '', :book_type => 'flat', :description => '', :style_template_id => '', :image_folder_id => '', :content_filter => 'markdown'} ,:created_by_id => @myself.id)
-          @newflatbook = BookBook.find(:last)
-          @newflatbook.name.should == @rand_name_f
-        end
-        
     end
 
     
@@ -139,7 +137,7 @@ describe Book::ManageController do
     end
 
 
- it 'should be able to preview pages1' do
+    it 'should be able to preview pages1' do
       BookBook.should_receive( :find ).and_return(@flatbook)
       book_pages = mock('book1')
       
@@ -171,16 +169,15 @@ describe Book::ManageController do
     it 'should create a version for a new flat book page' do
       flat_book
 
+      @flatbook.book_type.should == 'flat'
+
+      @page1.name.should_not == @rand_name_f
+
       assert_difference 'BookPageVersion.count', 1 do
-        post( 'save_page', :path => [@flatbook.id], :page_id => @page1.id, :page => {:name => @rand_name_f, :body => "1"})
-        prev = @flatbook.book_page_versions.find(:first, :order => 'id desc')
+        post 'save_page', :path => [@flatbook.id], :page_id => @page1.id, :page => {:name => @rand_name_f, :body => "1"}
+        @page1.reload
+        @page1.name.should == @rand_name_f
       end
     end
   end
 end
-
-
-
-
-
-

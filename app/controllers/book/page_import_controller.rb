@@ -1,4 +1,4 @@
-
+require 'csv'
 
 class Book::PageImportController < ModuleController
   component_info 'Book'
@@ -6,17 +6,15 @@ class Book::PageImportController < ModuleController
   cms_admin_paths 'content', 
                   'Content' => { :controller => '/content' }
 
-  require 'csv'
-
   def index
     @book = BookBook.find(params[:path][0])
-    cms_page_path ['Content', [@book.name, url_for(:controller => '/book/manage', :action => 'edit', :path => @book.id)]], 'Import Pages'
+    book_page_path 'Import Pages'
 
     if request.post? && params[:import]
       if params[:commit]
         @file = DomainFile.find_by_id params[:import][:file]
         if @file && @file.mime_type == 'text/csv'
-          redirect_to :action => 'confirm_import', :path => [@book.id, @file.id]
+          redirect_to :action => 'confirm', :path => [@book.id, @file.id]
         else
           @im_error = @file ? 'Invalid file type'.t : 'Missing file'.t
         end
@@ -26,37 +24,10 @@ class Book::PageImportController < ModuleController
     end
   end
   
-  def check_pages
-    @import_pages = []
-    @@fields = [:id,:name,:description,:published,:body,:parent_id]
-
-    reader = CSV.open(@file.filename, "r", ",")
-    reader.shift
-    reader.each do |row|
-      attr = {}
-      @@fields.each_with_index { |field,idx| attr[field] = row[idx] }
-
-      @page = @book.book_pages.find_by_id(attr[:id])
-      unless @page
-        @page_parent = @book.book_pages.find_by_id(attr[:parent_id])
-        @page = @page_parent ? @book.book_pages.find_by_name_and_parent_id(attr[:name], @page_parent.id) : @book.book_pages.find_by_name(attr[:name])
-      end
-
-      if @page
-        @import_pages.push([@page.name, "Updated"])
-      else
-        @import_pages.push([attr[:name], "New"])
-      end
-    end
-
-    @import_pages
-  end
-
-  def confirm_import   
+  def confirm
     @book = BookBook.find params[:path][0]
     @file = DomainFile.find params[:path][1]
-
-    cms_page_path ['Content', [@book.name, url_for(:controller => '/book/manage', :action => 'edit', :path => @book.id)]], 'Import Confirmation'
+    book_page_path 'Import Confirmation'
 
     if request.post?
       if params[:commit]
@@ -72,19 +43,12 @@ class Book::PageImportController < ModuleController
 
   def import
     @book = BookBook.find params[:path][0]
-    cms_page_path ['Content', [@book.name, url_for(:controller => '/book/manage', :action => 'edit', :path => @book.id)]], 'Import Status'
-
+    book_page_path 'Import Status'
     status
-
-    @back_button_url = url_for :action => 'confirm'
-
-    @finished_onclick = "document.location='#{url_for(:controller => '/book/manage', :action => 'edit', :path => @book.id)}';"
-    @hide_back = false
-    @enable_next = false
   end
 
   def status
-    @book = BookBook.find params[:path][0]
+    @book ||= BookBook.find params[:path][0]
 
     if session[:book_import_worker_key]
       results = Workling.return.get(session[:book_import_worker_key]) || { }
@@ -97,6 +61,25 @@ class Book::PageImportController < ModuleController
       @errors = []
     else
       @invalid_worker = true 
+    end
+  end
+
+  protected
+
+  def book_page_path(name)
+    cms_page_path ['Content', [@book.name, url_for(:controller => '/book/manage', :action => 'edit', :path => @book.id)]], name
+  end
+
+  def check_pages
+    reader = CSV.open(@file.filename, "r", ",")
+    reader.shift
+    @import_pages = reader.collect do |row|
+      page = BookPage.import_csv(@book, myself, row, :no_save => true)
+      if page.is_a?(BookPage)
+        [page.name, "Updated"]
+      else
+        [page[:name], "New"]
+      end
     end
   end
 end

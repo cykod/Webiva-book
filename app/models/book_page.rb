@@ -1,9 +1,9 @@
 # Copyright (C) 2010 Cykod LLC.
 
-
 class BookPage < DomainModel
-
   belongs_to :book_book
+  belongs_to :updated_by, :class_name => 'EndUser', :foreign_key => :updated_by_id
+  belongs_to :created_by, :class_name => 'EndUser', :foreign_key => :created_by_id
 
   acts_as_nested_set :scope => :book_book_id
 
@@ -11,12 +11,12 @@ class BookPage < DomainModel
 
   validates_presence_of :book_book
 
-  has_many :book_page_versions, :dependent => :destroy
+  has_many :book_page_versions, :dependent => :delete_all
 
   apply_content_filter(:body => :body_html)  do |page|
     { :filter => page.book_book.content_filter,
       :folder_id => page.book_book.image_folder_id, 
-      :pre_filter => Proc.new { |code| page.replace_page_links(code)}
+      :pre_filter => Proc.new { |code| page.replace_page_links(code) }
     }
   end
 
@@ -28,35 +28,7 @@ class BookPage < DomainModel
   after_save :auto_save_version
 
   content_node :container_type => 'BookBook', :container_field => 'book_book_id',
-  :except => Proc.new { |pg| !pg.parent_id }, :published => :published
-
-  def export_csv(writer,options = {}) #:nodoc:
-    fields = [ ['id', 'Page ID'.t ],
-               ['name', 'Page Title'.t ],
-               ['description', 'Description'.t ],
-               ['published', 'Published'.t ],
-               ['body', 'Page Body'.t ],
-               ['parent_id', 'Parent Title'.t ]
-             ] 
-    opts = options.delete(:include) ||  []
-   
-    
-    
-     
-    
-    if options[:header]
-      writer << fields.collect do |fld|
-        fld[1]
-      end
-    end
-    writer << fields.collect do |fld|
-      if fld[0]
-        self.send(fld[0])
-      else
-        fld[2]
-      end
-    end
-  end
+    :except => Proc.new { |pg| !pg.parent_id }, :published => :published
 
   def full_title
     "#{self.book_book.name}: #{self.name}"
@@ -79,12 +51,16 @@ class BookPage < DomainModel
     @child_cache << val
   end
 
+  def parent_url
+    self.parent ? self.parent.url : nil
+  end
+
   def parent_page
-     ((self.parent && self.parent.parent_id) ? self.parent : nil)
+    ((self.parent && self.parent.parent_id) ? self.parent : nil)
   end
 
   def next_page
-    @next_page ||= self.children[0] || BookPage.find(:first,:conditions => ['parent_id = ? AND book_book_id=? AND  lft > ?',self.parent_id,self.book_book_id,self.lft ], :order => 'lft') || :none
+    @next_page ||= self.children[0] || BookPage.first(:conditions => ['parent_id = ? AND book_book_id=? AND lft > ?',self.parent_id,self.book_book_id,self.lft ], :order => 'lft') || :none
     @next_page == :none ? nil : @next_page
   end
   
@@ -107,7 +83,6 @@ class BookPage < DomainModel
     end
     @back_page == :none ? nil : @back_page
   end
-  
 
   def replace_page_links(code)
     cd = code.gsub(/\[\[([^\]]+)\]\](\(([^\)]+)\))?/) do |mtch|
@@ -116,7 +91,7 @@ class BookPage < DomainModel
       linktext = $3
       if linktext
         newlink = $3.gsub(/[ _]+/,"-").downcase
-      "[#{titleinbrackets}](#{newlink})"
+        "[#{titleinbrackets}](#{newlink})"
       else
         newlink = $1.gsub(/[ _]+/,"-").downcase
         "[#{titleinbrackets}](#{newlink})"
@@ -142,15 +117,14 @@ class BookPage < DomainModel
     end
     save_version(editor||self.created_by_id,self.body,edit_type||'admin editor',v_status||'auto',remote_ip,prev_version)
   end
-  
- 
+
   def page_diff(version_body,orig_rev)
     curr_ver_body = version_body.to_s
 
     max_lines = 99999999 
     diff_header_length = 3
     if !orig_rev.blank?
-        base_ver = book_page_versions.find_by_id(orig_rev)
+      base_ver = book_page_versions.find_by_id(orig_rev)
       if base_ver.body.nil?
         page_body_old = ""
       else
@@ -179,25 +153,25 @@ class BookPage < DomainModel
     file_vers.close
 
     lines = %x(diff --unified=#{max_lines} #{file_orig.path} #{file_vers.path})
-     
-     if lines.empty?
-       lines = page_body_new.split(/\n/)
-     else
-       
-       lines = lines.split(/\n/)[diff_header_length..max_lines].
-         collect do |i|
+    
+    if lines.empty?
+      lines = page_body_new.split(/\n/)
+    else
+      
+      lines = lines.split(/\n/)[diff_header_length..max_lines].
+        collect do |i|
         if i == "  "
           i = " "
         else
-    
+          
           case i[0,1]
           when "+": [1, i[1..i.length-1]+"\n"]
           when "-": [-1, i[1..i.length-1]+"\n"]
           else;  i[1..i.length-1]+"\n"
           end
         end
-       end
-     end
+      end
+    end
 
     file_orig.unlink
     file_vers.unlink 
@@ -208,7 +182,7 @@ class BookPage < DomainModel
       else
         if elem.is_a?(String) 
           output[-1] << elem
-     
+          
           
           output
         elsif output[-1][0] == elem[0]
@@ -221,7 +195,58 @@ class BookPage < DomainModel
         
       end
     end
- end
+  end
+
+  @@export_fields = [
+    [:url, 'Page URL'],
+    [:name, 'Page Title'],
+    [:description, 'Description'],
+    [:published, 'Published'],
+    [:body, 'Page Body'],
+    [:parent_url, 'Parent URL']
+  ]
+  def self.export_fields; @@export_fields; end
+
+  def export_csv_header(writer, options={}) #:nodoc:
+    writer << self.class.export_fields.collect { |fld| fld[1].t }
+  end
+
+  def export_csv(writer, options={}) #:nodoc:
+    self.export_csv_header(writer, options) if options[:header]
+    writer << self.class.export_fields.collect { |fld| self.send(fld[0]) }
+  end
+
+  def self.import_csv(book, user, row, options={}) #:nodoc:
+    attr = {}
+    self.export_fields.each_with_index { |field,idx| attr[field[0]] = row[idx] }
+
+    page = nil
+    page_parent = nil
+    unless attr[:url].blank?
+      if attr[:parent_url].blank?
+        page = book.book_pages.find_by_url(attr[:url])
+      else
+        book.book_pages.find(:all, :conditions => {:url => attr[:parent_url]}).each do |page_parent|
+          page = book.book_pages.find_by_url_and_parent_id(attr[:url], page_parent.id)
+          break if page
+        end
+      end
+    end
+
+    return (page || attr) if options[:no_save]
+
+    if page
+      page.update_attributes(attr.slice(:name,:description,:published,:body))
+    else
+      page = book.book_pages.new(attr.slice(:name,:description,:published,:body))
+      page.created_by_id = user.id if user
+      page.save
+    end
+
+    page.move_to_child_of(page_parent || book.root_node) unless book.flat_book?
+    page
+  end
+
   protected
 
   def create_url
