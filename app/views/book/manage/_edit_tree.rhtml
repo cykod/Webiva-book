@@ -1,6 +1,27 @@
 
 <div class="tree_container">
-  <div id='tree_content' class="tree_container_body">
-    <%= active_tree :chapter, @chapters, :javascript => 'ChapterTree', :children => :child_cache %> 
+
+  <div id='new_page' style="padding:5px 10px 0 0; float:right;">
+    <%= theme_image_tag('icons/tree/file.png', :align => 'absmiddle') %> Add New Page
+  </div>
+
+  <h2><%= 'Book Structure'.t %></h2>
+
+
+  <div class="tree_container_body">
+
+    <form class='admin_form' style="padding:0 0 5px 5px;" onsubmit='ChapterTree.search(Form.serialize(this)); return false;'>
+      <input type='text' class='text_field_input' name='search' value='Search..' onfocus="if(this.value=='Search..') { this.value=''; } else { this.select(); }" onblur="if(this.value=='') this.value='Search..';" style='width:200px'/> 
+    </form>
+
+    <div id='search_content' style='width:180px;display:none; padding:10px;'>Running Search...</div>
+
+    <div id='tree_content'>
+      <%= active_tree :chapter, @chapters, :javascript => 'ChapterTree', :children => :child_cache %>
+    </div>
   </div>
 </div>
+
+<script>
+new Draggable('new_page', { ghosting: true, revert: true, scroll: window  });
+</script>

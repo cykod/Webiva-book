@@ -1,12 +1,12 @@
 <% cms_form_for :page, @page,  :html => { :class => 'admin_form full_page_form', :onsubmit => "ChapterTree.editPage(#{@page.id} ); return false;", :width => '100%;', :id => 'page_form' }  do |f| -%>
  <%= hidden_field_tag 'current_page_id', @page.id, :id => 'current_page_id' -%>
  <%= f.text_field :name, :vertical => true %> 
- <%= f.check_boxes :published, [['Published',true]], :single => true,:label => '', :vertical => true %> 
+ <%= f.check_boxes :published, [['Published',true]], :single => true, :label => '', :vertical => true %> 
  <%= f.text_area :body, :rows => 30, :style => 'width:100%', :vertical => true %> 
  <%= f.text_field :reference, :vertical => true, :description => 'Optional external reference identifier' %>
  <%= f.text_area :description, :rows => 3, :style => 'width:100%', :vertical => true, :label => 'Optional Description' %> 
  <%= f.spacer %>
- <%= f.submit_tag 'Save' %> 
+ <%= f.submit_tag 'Save Page' %> 
 <% end -%>
 
 <script>

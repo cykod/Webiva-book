@@ -138,6 +138,8 @@ ChapterTree = {
   updateTitle: function(page_id,title) {
     var elem = $('chapter_' + page_id).down('.active_tree_leaf_content');
     elem.innerHTML = title;
+    elem = $('chapter_title');
+    if(elem) {elem.innerHTML = title;}
   }
 };
 

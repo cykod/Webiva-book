@@ -19,29 +19,15 @@
 
 <div class='admin_content'>
 
-<% unless @book.book_type == 'flat' -%>
-  <div class='active_tree_node_group'>
-    <div class='active_tree_node_header'>Elements <i>(drag to add)</i></div>
-    <div class='active_tree_nodes' id='add_nodes'>
-      <div class='active_tree_node_elem' id='new_page'>
-        <%= theme_image_tag('icons/tree/file.png', :align => 'absmiddle') %> Add New Page
-      </div>
-    </div>
-  </div>
-
-  <hr/>
-<% end %>
-
-<form class='admin_form' style="padding:0 0 5px 5px;" onsubmit='ChapterTree.search(Form.serialize(this)); return false;'>
-  <input type='text' class='text_field_input' name='search' value='Search..' onfocus="if(this.value=='Search..') { this.value=''; } else { this.select(); }" onblur="if(this.value=='') this.value='Search..';" style='width:240px'/> 
-</form>
-
-<div id='search_content' style='width:180px;display:none; padding:10px;'>Running Search...</div>
-
 <%= @book.book_type == 'flat' ? render(:partial => 'edit_flat') : render(:partial => 'edit_tree') %>
 
 <div class="tree_detail" id="element_info">
-  <%= render :partial => 'page' if @page -%>
+  <% if @page -%>
+    <%= render :partial => 'page' %>
+  <% else -%>
+    <h1 class="inpage"><%= 'Edit Your Book'.t %></h1>
+    <h2><%= 'Click on a page name to view and edit'.t %></h2>
+  <% end -%>
 </div>
 
 </div>
@@ -50,7 +36,5 @@
 new WebivaExporter({button: "#export_book",
                     url: "<%= url_for :action => 'generate_export', :path => @book.id %>"
                    });
-
-new Draggable('new_page', { ghosting: true, revert: true, scroll: window  });
 </script>
 

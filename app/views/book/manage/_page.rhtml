@@ -2,6 +2,10 @@
   <li class='icon'><a href='javascript:void(0);'  title='<%= vh 'Delete Page'.t%>' onclick='ChapterTree.deletePage(<%= @page.id %>);'><%= image_tag(theme_src('icons/header_actions/delete_page.png')) %></a></li>
 </ul>  
 
+<h1 class="inpage" id="chapter_title"><%= @page.name %></h1>
+
+<br/>
+
 <% ajax_tabs ['Edit',['Preview',"ChapterTree.previewPage(#{@page.id});"],['Versions', "ChapterTree.loadVersionTable(#{@page.id});"]],'Edit' do |t| -%>
 
 <% t.tab do -%>
