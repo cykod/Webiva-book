@@ -1,12 +1,10 @@
 
 if @updated
   if @book.book_type == 'flat'
-    page.replace 'tree_content', :partial => 'edit_flat'
+    page.replace_html 'tree_content', :partial => 'flat_tree'
   else 
     page << "ChapterTree.updateTitle(#{@page.id},'#{jh(render(:partial => 'chapter', :locals => { :chapter => @page }))}');"
   end
-
-
   
   if @new_page
     page.replace_html 'element_info', :partial => 'page'
