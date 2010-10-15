@@ -1,49 +1,30 @@
-<div align='right'> <span id='save_notice'></span>&nbsp;<button onclick='ChapterTree.editPage(<%= @page.id %>); return false;'>Save Page</button></div>
+<ul class='page_detail_buttons'>
+  <li class='icon'><a href='javascript:void(0);'  title='<%= vh 'Delete Page'.t%>' onclick='ChapterTree.deletePage(<%= @page.id %>);'><%= image_tag(theme_src('icons/header_actions/delete_page.png')) %></a></li>
+</ul>  
 
 <% ajax_tabs ['Edit',['Preview',"ChapterTree.previewPage(#{@page.id});"],['Versions', "ChapterTree.loadVersionTable(#{@page.id});"]],'Edit' do |t| -%>
 
-
 <% t.tab do -%>
-  
-  <script>
-    ChapterTree.updateTitle(<%= @page.id %>,"<%= jh(render(:partial => 'chapter', :locals => { :chapter => @page })) %>");
-  </script>
+<div align="right" style="padding:5px;" id="save_notice"></div>
 
-<div id='edit_page_form'>
+<div id='edit_page_form' style="padding-right:5px;">
   <%= render(:partial => 'page_edit_form') %>
 </div>
 
 <script>
-  
+  ChapterTree.updateTitle(<%= @page.id %>,"<%= jh(render(:partial => 'chapter', :locals => { :chapter => @page })) %>");
   <%= "ChapterTree.selectPage(#{@page.id});" if @page.id %> 
-                          
 </script>
-
 <% end -%>
 
 <% t.tab do -%>
-  <div id='element_preview' style=' border:1px solid #CCCCCC; padding:10px;'>
-   <iframe id='preview_iframe' width='100%' style='height:800px; border:0px;'></iframe>
-  </div>
-
-
-  <% end -%>
-
-<% t.tab do -%>
-
-<div id='version_table'>
-
-
+<div id='element_preview' style=' border:1px solid #CCCCCC; padding:10px;'>
+  <iframe id='preview_iframe' width='100%' style='height:800px; border:0px;'></iframe>
 </div>
+<% end -%>
 
+<% t.tab do -%>
+<div id='version_table'></div>
 <% end -%>
 
 <% end -%>
-<tr>
-  <td>
-    <div id='delete_page' style=' float:right'>
-<button onclick='ChapterTree.deletePage(<%= @page.id %>); return false;'>Permenantly Delete Page</button>
-
-    </div>
-  </td>
-</tr>

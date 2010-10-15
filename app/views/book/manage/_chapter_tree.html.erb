@@ -1,0 +1,183 @@
+<script>
+
+ChapterTree = {
+  exitStatus:null,
+  selectedPage: null,
+  pageUrl: "<%= url_for :action => 'page', :path => book.id %>",
+  updateTreeUrl: "<%= url_for :action => 'update_tree', :path => book.id %>",
+  addToTreeUrl: "<%= url_for :action => 'add_to_tree', :path => book.id %>",
+  displayVersionTableUrl: "<%= url_for :action => 'display_version_table', :path => book.id %>",
+  searchUrl: "<%= url_for :action => 'search', :path => book.id %>",
+  savePageUrl: "<%= url_for :action => 'save_page', :path => book.id %>",
+  previewPageUrl: "<%= url_for :action => 'preview_page', :path => book.id %>",
+  deletePageUrl: "<%= url_for :action => 'delete_page', :path => book.id %>",
+
+  select: function(element_id,element) {
+    if (ChapterTree.confirmExit()) {
+      AutoSave.draftHandler(0,0);  
+      $('tree_content').show();
+      $('search_content').hide();
+
+      var params = { page_id: element_id };
+      new Ajax.Updater('element_info', ChapterTree.pageUrl, {parameters: params, evalScripts: true});
+     }
+  },
+
+  confirmExit: function() {
+    if (AutoSave.pageChanged()) {
+      var cont = confirm('Make sure you have saved changes. Really want to edit a new page?');
+      return cont;
+    }
+
+    return true;
+   },
+
+  drop: function(params) {
+    new Ajax.Request(ChapterTree.updateTreeUrl, {parameters: params});
+  },
+
+  add: function(drag_id,drop_id,position) {
+    if (ChapterTree.confirmExit()) {
+      AutoSave.draftHandler(0,0);  
+
+      var params = $H({ page_id:drop_id, act:drag_id, position:position });
+      new Ajax.Request(ChapterTree.addToTreeUrl, {parameters: params});
+     }
+  },
+
+  loadVersionTable: function(page_id) {
+    var params = { page_id:page_id };
+    new Ajax.Updater('version_table', ChapterTree.displayVersionTableUrl, { parameters: params, evalScripts:true });
+  },
+	  
+  selectPage: function(page_id) {
+    if(ChapterTree.selectedPage) {
+      $('chapter_' + ChapterTree.selectedPage).removeClassName('active_tree_selected_leaf');
+    }
+
+    ChapterTree.selectedPage = page_id;
+    $('chapter_' + ChapterTree.selectedPage).addClassName('active_tree_selected_leaf');
+  },
+
+  search: function(params) {
+    $('tree_content').hide();
+    $('search_content').innerHTML = 'Searching...';
+    $('search_content').show();
+    new Ajax.Request(ChapterTree.searchUrl,{ parameters: params });
+  },
+
+  clearSearch: function() {
+    $('tree_content').show();
+    $('search_content').hide();
+  },
+
+  saveCurrentPage: function() {
+    if($('current_page_id')) {
+      var page_id = $('current_page_id').value;
+      if(page_id) {
+        ChapterTree.editPage(page_id);
+      }
+      AutoSave.draftHandler(0, null); 
+    }
+  },
+
+  previewCurrentPage: function() {
+    if($('current_page_id')) {
+      var page_id = $('current_page_id').value;
+      if(page_id) {
+        ChapterTree.previewPage(page_id);
+        SCMS.select_tab_num(2);
+      }
+    }
+  },
+
+  updateSaveNotice: function(str) {
+    var notice = $('save_notice');
+    if(notice) {
+      notice.update(str);
+  }
+  },
+
+  editPage: function(page_id) {
+    ChapterTree.updateSaveNotice('Saving Page');
+    SCMS.select_tab_num(1);
+    var params = Form.serialize('page_form');
+
+    if (page_id) {
+      params += "&page_id=" + page_id;
+    }
+
+    if (ChapterTree.saveError) { 
+      params += "&save_error=1";
+    }
+
+    if (AutoSave.draftid) {
+      params += "&draft_id=" + AutoSave.draftid;
+    }
+
+    new Ajax.Request(ChapterTree.savePageUrl, { parameters: params, evalScripts: true });
+    AutoSave.draftHandler(0,page_id); 
+  },
+
+  previewPage: function(page_id) {
+    $('element_preview').innerHTM = '';
+    var params = Form.serialize('page_form');
+    params +=  "&page_id=" + page_id;
+    new Ajax.Request(ChapterTree.previewPageUrl, { parameters: params, evalScripts: true });
+  },
+
+  deletePage: function(page_id) {
+    if(confirm("Are you sure you want to permanently delete this page?")) {
+      var params = Form.serialize('page_form');
+      params +=  "&page_id=" + page_id;
+      new Ajax.Request(ChapterTree.deletePageUrl, { parameters: params} );
+      ChapterTree.selectedPage = null;
+    }
+  },
+
+  updateTitle: function(page_id,title) {
+    var elem = $('chapter_' + page_id).down('.active_tree_leaf_content');
+    elem.innerHTML = title;
+  }
+};
+
+
+shortcut.add('ctrl+s',ChapterTree.saveCurrentPage);
+shortcut.add('ctrl+e',function() { SCMS.select_tab_num(1) } );
+shortcut.add('ctrl+p',function() { ChapterTree.previewCurrentPage() } );
+
+var version_id;
+                            
+AutoSave = {
+  draft_timer_id: null,
+  draftid: null,
+  saveDraftUrl: "<%= url_for :action => 'save_draft', :path => book.id %>",
+
+  draftHandler: function(changed,page_id) {
+    if (changed == 1 && !AutoSave.draft_timer_id ) {
+      this_page = page_id;
+      AutoSave.draft_timer_id = setInterval("AutoSave.setDraft(this_page)",60000); 
+    } else if (changed == 0) {
+      clearInterval( AutoSave.draft_timer_id );
+      AutoSave.resetDraftId();
+      AutoSave.draft_timer_id = null;
+    }
+  },
+
+  pageChanged: function() {
+    return AutoSave.draft_timer_id != null;
+  },
+
+  setDraft: function(page_id) {
+    var params = Form.serialize('page_form');
+    params += "&page_id=" + page_id;
+    if (AutoSave.draftid) { params += "&version_id=" + AutoSave.draftid; };
+    new Ajax.Request(AutoSave.saveDraftUrl, { parameters: params,  evalScripts: true });
+  },
+
+  resetDraftId: function() {
+    AutoSave.draftid=null;
+  }
+}
+
+</script>

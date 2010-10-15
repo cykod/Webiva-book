@@ -1,7 +1,6 @@
 
-      <div id='tree_content' style='width:200px;' >
-        <%= active_tree :chapter, @chapters, :javascript => 'ChapterTree', :children => :child_cache  %> 
-      </div>
-      <div id='search_content' style='width:180px;display:none; padding:10px;'>
-        Running Search...
-      </div>
+<div class="tree_container">
+  <div id='tree_content' class="tree_container_body">
+    <%= active_tree :chapter, @chapters, :javascript => 'ChapterTree', :children => :child_cache %> 
+  </div>
+</div>
