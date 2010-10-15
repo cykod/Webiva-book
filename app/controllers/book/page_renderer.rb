@@ -5,33 +5,77 @@ class Book::PageRenderer < ParagraphRenderer
   features '/book/page_feature'
   features '/editor/menu_feature'
 
-  
   paragraph :chapters
   paragraph :content
   paragraph :wiki_editor
 
   attr_accessor :editor, :body, :edit_type, :version_status, :remote_ip
- 
+  
   def chapters
-
-    # Get book from options
     @options = paragraph_options(:chapters)
+    @book = self.find_book
+    return render_paragraph :text => 'No book found' unless @book
 
-    @book = find_book 
-    return render_paragraph :text => '' unless @book
+    @page = self.find_page
 
-    page_conn_type,page_url = page_connection(:flat_chapter)
-    
     @chapters = @book.nested_pages
 
-    @menu, selected = build_chapter_data(@chapters,@options.levels-1,@options.root_page_url.to_s + '/',page_url.to_s)
+    root_url = @options.root_page_url.to_s + '/'
+    page_url = @page ? @page.url : ''
+    @menu, selected = build_chapter_data(@chapters, @options.levels-1, root_url, page_url)
 
     render_paragraph :text => menu_feature()
   end
 
+  def content
+    @options = paragraph_options(:content)
+    @book = self.find_book
+    return render_paragraph :text => 'No book found' unless @book
+    return render_paragraph :text => 'Unsupported book url scheme...' if @book.nested_url?
+
+    @page = self.find_page
+    return render_paragraph :text => 'No page found' if @page.nil? && editor?
+    raise SiteNodeEngine::MissingPageException.new( site_node, language ) unless @page
+
+    @book_save = flash[:book_save]
+
+    set_title(@page.name)
+    set_title(@page.name, "page")
+    set_content_node(@page.content_node.id) if @page.content_node
+
+    @edit_url = edit_url
+
+    render_paragraph :text => book_page_content_feature()
+  end
+
+  def wiki_editor
+    @options = paragraph_options(:wiki_editor)
+    @book = self.find_book
+    return render_paragraph :text => 'No book found' unless @book
+    return render_paragraph :text => 'Unsupported book url scheme...' if @book.nested_url?
+
+    @page = self.find_page
+    @page ||= @book.book_page.new if @options.allow_create
+    return render_paragraph :text => 'No page found' if @page.nil? && editor?
+    raise SiteNodeEngine::MissingPageException.new( site_node, language ) unless @page
+
+    if request.post? && params[:commit]
+      if save_page
+      end
+    end
+
+    set_title(@page.name)
+    set_title(@page.name, "page")
+    set_content_node(@page.content_node.id) if @page.content_node
+    
+    render_paragraph :text => book_page_wiki_editor_feature()
+  end
+
+  protected
+
   def build_chapter_data(chapters,level,path = '',current_path='')
     chapter_selected = nil
-     chaps = chapters.map do |chapter|
+    chaps = chapters.map do |chapter|
       if chapter.published?
         url =  ( path + chapter.url.to_s)
         menu, selected = (level > 0) ? build_chapter_data(chapter.child_cache,level-1,path,current_path) : [ nil, nil ]
@@ -52,131 +96,12 @@ class Book::PageRenderer < ParagraphRenderer
     [ chaps, chapter_selected ]
   end
 
-  
-  def content
-
-    @options = paragraph_options(:content)
-
-     @book = find_book
-
-    return render_paragraph :text => '' unless @book
-
-    if editor?
-        @page = @book.first_page
-    elsif @book.flat_url?
-      unless params[:ref].blank? 
-        @page = @book.book_pages.find_by_reference_and_published(params[:ref], true)
-      end 
-      unless @page 
-        page_conn_type,page_url = page_connection(:flat_chapter)
-
-        if @options.show_first_page && page_url.blank?
-          @page = @book.first_page
-        else
-          @page = @book.book_pages.find_by_url_and_published(page_url,true,:conditions => 'parent_id IS NOT NULL')
-        end
-
-        if !@page && !page_url.blank?
-          @create_page_url = page_url
-        end
-      end
-    else
-      raise 'Unsupported...'
-    end
-
-    @book_save = flash[:book_save]
-
-    if @page
-      set_title(@page.name)
-      set_title(@page.name,"page")
-      set_page_connection(:content_id, ['BookPage',@page.id])
-      set_content_node(@page)
-      
-    else
-      set_title('Invalid Page')
-    end
-    
-    @url = site_node.node_path
-
-    @edit_url = edit_url
-
-   render_paragraph :text => book_page_content_feature()
-  end
-
-  def can_edit
-    @options = paragraph_options(:content)
-    edit_url if @options.enable_wiki
-  end
   def edit_url
-
-    if @options.enable_wiki && @page
+    if @options.enable_wiki && @options.edit_page_url
       "#{@options.edit_page_url}/#{@page.url}"
-    elsif @options.enable_wiki && @create_page_url
-      "#{@options.edit_page_url}/#{@create_page_url}"
-    else
-      nil
     end
-
-
   end
   
-  def add_page
-    @book.book_pages.build(:title => title_)
-     return 'this-page'
-  end
-
- def wiki_editor
-    @options = paragraph_options(:wiki_editor)
-
-    @book = find_book
-
-   return render_paragraph :text => '' unless @book
-
-   if @book.flat_url?
-     unless params[:ref].blank? 
-       @page = @book.book_pages.find_by_reference_and_published(params[:ref], true)
-     end 
-
-     unless @page 
-       page_conn_type,page_url = page_connection(:flat_chapter)
-
-       if @options.show_first_page && page_url.blank?
-         @page = @book.first_page
-       else
-         @page = @book.book_pages.find_by_url_and_published(page_url,true,:conditions => 'parent_id IS NOT NULL')
-       end
-
-       if !@page && @options.allow_create && !page_url.blank?
-         @page = @book.book_pages.build(:name => page_url.titleize)
-       end
-     end
-   else
-     return render_paragraph :text => 'Unsupported...'
-   end
-
-    @ipaddress = request.remote_ip
-   
-
-    if request.post? && params[:commit]    
-      return if save_page
-    elsif request.post? && params[:reset]
-    @page.reload
-    end
-    
-    if @page
-      set_title(@page.name)
-      set_page_connection(:content_id, ['BookPage',@page.id])
-      set_content_node(@page)
-    else
-      set_title('Invalid Page')
-      # set_content_node(@page.edit)
-
-    end
-    
-    @url = site_node.node_path
-    render_paragraph :text => book_page_wiki_editor_feature()
-  end
-
   def save_page
     if params[:commit] && @page
       @newpage = @page.new_record?
@@ -219,7 +144,7 @@ class Book::PageRenderer < ParagraphRenderer
         return true
       else 
         @prev_version = @page.book_page_versions.latest_revision
-       
+        
         @page.save_version(myself.id,params[:page_versions][:body],'wiki','submitted',@ipaddress,@prev_version[0].id)
         
         flash[:book_save] = "Your edits have been submitted for review.".t
@@ -229,25 +154,47 @@ class Book::PageRenderer < ParagraphRenderer
       end
       return false
     end
-
   end
-
-  protected
 
   def find_book
-    book_id = @options.book_id
-    if book_id.to_i == 0
-      conn_type,book_id = page_connection(:book)
+    # using page connections
+    if @options.book_id.blank?
+      if editor?
+        @book = BookBook.first
+      else
+        conn_type, book_id = page_connection :book
+        @book = BookBook.find_by_id book_id
+      end
+    else
+      @book = BookBook.find_by_id @options.book_id
     end
 
-    @book_url = "\#{id}" || ""
-    book = BookBook.find_by_id(book_id)
+    unless editor?
+      raise SiteNodeEngine::MissingPageException.new(site_node, language) if @book.nil? || @book.nested_url?
+    end
 
-    # Get a dummy book for the editor if needed
-    book = BookBook.find(:first) if !book && editor?
-
-    book
-
+    @book
   end
 
+  def find_page
+    return unless @book
+    return @page = @book.first_page if editor?
+
+    @page = @book.book_pages.find_by_reference(params[:ref]) if params[:ref]
+
+    if @page.nil?
+      conn_type, conn_id = page_connection(:flat_chapter)
+
+      if conn_id.blank?
+        @page = @book.first_page if @options.show_first_page
+      elsif @book.flat_url?
+        @page = @book.book_pages.find_by_url conn_id
+      elsif @book.id_url?
+        @page = @book.book_pages.find_by_id conn_id
+      end
+    end
+
+    @page = nil if @page && ! @page.published?
+    @page
+  end
 end
