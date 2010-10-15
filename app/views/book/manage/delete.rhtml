@@ -10,7 +10,7 @@
 </form>
   </td>
   <td>
-  <input type='button' value='<%= "Cancel".t %>' name='cancel' onclick="document.location='<%= url_for :action => 'index',:path => @book.id %>';"/>
+  <input type='button' value='<%= "Cancel".t %>' name='cancel' onclick="document.location='<%= url_for :action => 'edit', :path => @book.id %>';"/>
 
   </td>
 </tr>

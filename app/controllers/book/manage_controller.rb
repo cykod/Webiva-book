@@ -29,7 +29,7 @@ class Book::ManageController < ModuleController
   def book
     if params[:path][0]
       @book = BookBook.find params[:path][0].to_i
-      cms_page_path ['Content'], "Configure %s" / @book.name
+      cms_page_path ['Content', [@book.name, url_for(:action => 'edit', :path => @book.id)]], 'Configure'
     else 
       @book = BookBook.new :add_to_site => true
       @book.created_by_id = myself.id
@@ -200,10 +200,9 @@ class Book::ManageController < ModuleController
 
   def delete
     @book =  BookBook.find(params[:path][0])
-    cms_page_path ['Content'],['Delete %s',nil,@book.name ] 
+    cms_page_path ['Content', [@book.name, url_for(:action => 'edit', :path => @book.id)]], 'Delete Book'
     if request.post? && params[:destroy] == 'yes'
       @book.destroy
-
       redirect_to :controller => '/content', :action => 'index'
     end
   end
@@ -323,9 +322,7 @@ class Book::ManageController < ModuleController
   
   def bulk_edit
     @book = BookBook.find(params[:path][0])
-
-    cms_page_path ['Content'], 'Bulk Edit Pages in %s' / @book.name
-
+    cms_page_path ['Content', [@book.name, url_for(:action => 'edit', :path => @book.id)]], 'Bulk Edit'
     display_bulkview_table(display)
   end
 

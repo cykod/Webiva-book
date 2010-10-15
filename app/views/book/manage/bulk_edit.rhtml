@@ -1,57 +1,41 @@
-<% action_panel do |p| -%>
-  <%= p.link 'Configure Book',:action => 'book',:path => [ @book.id ], :icon => 'configure.gif' %> 
-  <%= p.link 'Edit Book',:action => 'edit',:path => [ @book.id ], :icon => 'configure.gif' %> 
-
-  <%= p.link 'Delete Book', :action => 'delete', :path => [ @book.id ], :icon => 'delete.gif', :right => true %>
-  
-<% end -%>
-
-<hr/>
 <script>
- <%= active_table_javascript -%>
+Pages = {
+  addSubs: function() {
+     var page_ids = [];
+    var elements = $('bulkview_table_update_form').getInputs();
+    elements.each(function(elem) {
+    if(elem.type == 'checkbox' && elem.className == 'entry_checkbox') {
+      if(elem.checked)
+        page_ids.push("page_ids[]=" + encodeURIComponent(elem.value));
+      }
+    });
+    SCMS.remoteOverlay("<%= url_for :action => 'add_subpages_form', :path => [ @book.id ] %>", page_ids.join("&") );
+  }, 
+
+  addSubsSubmit: function(frm) {
+    SCMS.updateOverlay("<%= url_for :action => 'add_subpages_form', :path => [ @book.id ] %>",  Form.serialize(frm) );
+  },
+
+  tableAction: function(action,params) {
+    ActiveTable.action(action,null,"bulkview_table","<%= url_for :action => 'display_bulkview_table', :path => [ @book.id ] %>",'bulkview_table',params);
+  },
+
+  editMeta: function(page_id) {
+    var params;
+    var page_id =+ page_id;  
+    SCMS.remoteOverlay("<%= url_for :action => 'edit_meta_form', :path => [ @book.id ] %>",  { page_id: page_id });
+  },
+
+  editMetaSubmit: function(frm) {
+    SCMS.updateOverlay("<%= url_for :action => 'edit_meta_form', :path => [ @book.id ] %>",  Form.serialize(frm) );
+  },
+
+}
 </script>
+	  
 
 <div class='admin_content'>
-
 <div id='bulkview_table'>
   <%= render :partial => 'bulkview_table' %>
 </div>
-
 </div>
-
-<script>
-  Pages = {
-    addSubs: function() {
- 
-      var page_ids = [];
-      var elements = $('bulkview_table_update_form').getInputs();
-      elements.each(function(elem) {
-      if(elem.type == 'checkbox' && elem.className == 'entry_checkbox') {
-        if(elem.checked)
-          page_ids.push("page_ids[]=" + encodeURIComponent(elem.value));
-        }
-      });
-      SCMS.remoteOverlay("<%= url_for :action => 'add_subpages_form', :path => [ @book.id ] %>", page_ids.join("&") );
-    }, 
-  
-    addSubsSubmit: function(frm) {
-      SCMS.updateOverlay("<%= url_for :action => 'add_subpages_form', :path => [ @book.id ] %>",  Form.serialize(frm) );
-    },
-  
-    tableAction: function(action,params) {
-      ActiveTable.action(action,null,"bulkview_table","<%= url_for :action => 'display_bulkview_table', :path => [ @book.id ] %>",'bulkview_table',params);
-    },
-  editMeta: function(page_id) {
-      var params;
-      var page_id =+ page_id;  
-      SCMS.remoteOverlay("<%= url_for :action => 'edit_meta_form', :path => [ @book.id ] %>",  { page_id: page_id });
-    },
-    
-  
-    editMetaSubmit: function(frm) {
-      SCMS.updateOverlay("<%= url_for :action => 'edit_meta_form', :path => [ @book.id ] %>",  Form.serialize(frm) );
-    },
-
-  }
-</script>
-	  
