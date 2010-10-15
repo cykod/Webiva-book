@@ -15,10 +15,13 @@
   <%= render(:partial => 'page_edit_form') %>
 </div>
 
+<% if @page.id -%>
 <script>
   ChapterTree.updateTitle(<%= @page.id %>,"<%= jh(render(:partial => 'chapter', :locals => { :chapter => @page })) %>");
-  <%= "ChapterTree.selectPage(#{@page.id});" if @page.id %> 
+  <%= "ChapterTree.selectPage(#{@page.id});" %> 
 </script>
+<% end -%>
+
 <% end -%>
 
 <% t.tab do -%>

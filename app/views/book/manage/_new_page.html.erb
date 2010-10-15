@@ -1,0 +1,16 @@
+<h1 class="inpage" id="chapter_title"><%= 'New Page'.t %></h1>
+
+<br/>
+
+<% ajax_tabs ['Edit'], 'Edit' do |t| -%>
+
+<% t.tab do -%>
+<div align="right" style="padding:5px;" id="save_notice"></div>
+
+<div id='edit_page_form' style="padding-right:5px;">
+  <%= render(:partial => 'page_edit_form') %>
+</div>
+
+<% end -%>
+
+<% end -%>

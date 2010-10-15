@@ -1,8 +1,18 @@
 
-<div id='tree_content' style='width:200px;'>
-  <ul id='chapter_tree' class='active_tree active_tree_branch'>
-    <% @chapters.each do |chapter|  %>
-      <%= render :partial => 'chapter_flat', :locals => { :chapter => chapter } %>
-   <% end %> 
-  </ul>
+<div class="tree_container">
+
+  <h2><%= 'Book Structure'.t %></h2>
+
+  <div class="tree_container_body">
+
+    <form class='admin_form' style="padding:0 0 5px 5px;" onsubmit='ChapterTree.search(Form.serialize(this)); return false;'>
+      <input type='text' class='text_field_input' name='search' value='Search..' onfocus="if(this.value=='Search..') { this.value=''; } else { this.select(); }" onblur="if(this.value=='') this.value='Search..';" style='width:200px'/> 
+    </form>
+
+    <div id='search_content' style='width:180px;display:none; padding:10px;'>Running Search...</div>
+
+    <div id='tree_content'>
+      <%= render :partial => 'flat_tree' %>
+    </div>
+  </div>
 </div>

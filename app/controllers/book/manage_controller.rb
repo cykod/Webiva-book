@@ -118,8 +118,11 @@ class Book::ManageController < ModuleController
 
     display_version_table false
 
-    render :partial => 'page'
-
+    if @page.id
+      render :partial => 'page'
+    else
+      render :partial => 'new_page'
+    end
   end
 
   def save_page
@@ -139,8 +142,8 @@ class Book::ManageController < ModuleController
     else 
       @page.prev_version = @page.book_page_versions.latest_revision[0].id
     end
-    @page.save
-    @updated=true;
+
+    @updated = @page.save
     @chapters = @book.nested_pages
     
     if !params[:draft_id].blank?    
@@ -150,8 +153,7 @@ class Book::ManageController < ModuleController
     
     @save_error = params[:save_error]
   end
-  
-  
+
   def save_draft
     @book = BookBook.find(params[:path][0])
     
@@ -188,7 +190,6 @@ class Book::ManageController < ModuleController
   end
 
   def delete_page
-    
     @book = BookBook.find(params[:path][0])
     @page = @book.book_pages.find(params[:page_id])
     @page.destroy if @page
@@ -196,6 +197,7 @@ class Book::ManageController < ModuleController
 
     @chapters = @book.nested_pages
   end 
+
   def delete
     @book =  BookBook.find(params[:path][0])
     cms_page_path ['Content'],['Delete %s',nil,@book.name ] 
@@ -204,8 +206,8 @@ class Book::ManageController < ModuleController
 
       redirect_to :controller => '/content', :action => 'index'
     end
-    
   end
+
   def display_version_table(display=true)
     @book ||= BookBook.find(params[:path][0])
     @page ||= @book.book_pages.find_by_id(params[:page_id]) || @book.book_pages.build
@@ -222,11 +224,9 @@ class Book::ManageController < ModuleController
                                    :conditions => ['book_page_id = ?',@page.id])
 
     render :partial => 'version_table' if display
-    
   end
   
   def view_wiki_edits
-    
     @book = BookBook.find(params[:path][0])
     @vers_body = BookPageVersion.find(params[:version_id]) 
     @orig_body = BookPageVersion.find_by_id(@vers_body.base_version_id) || @vers_body
@@ -245,13 +245,13 @@ class Book::ManageController < ModuleController
   end
  
   def review_wiki_edits
-    
     @book = BookBook.find(params[:path][0])
     @version = @book.book_page_versions.find(params[:version_id])
     @version.update_attributes(:version_status => "reviewed", :updated_at => Time.now)
     
     render :nothing => true
   end
+
   def accept_wiki_edits
     @book = BookBook.find(params[:path][0])
     @version = @book.book_page_versions.find_by_id(params[:version_id])
@@ -270,7 +270,6 @@ class Book::ManageController < ModuleController
     render :nothing => true
 
   end
-
 
   def add_subpages_form
     @book =  BookBook.find(params[:path][0])
@@ -294,6 +293,7 @@ class Book::ManageController < ModuleController
                                  :conditions => ['book_book_id = ? and name != ?',@book.id,'Root'])
     end
   end
+
   def edit_meta_form 
     @book = BookBook.find(params[:path][0])
     

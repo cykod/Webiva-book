@@ -2,6 +2,7 @@
  <%= hidden_field_tag 'current_page_id', @page.id, :id => 'current_page_id' -%>
  <%= f.text_field :name, :vertical => true %> 
  <%= f.check_boxes :published, [['Published',true]], :single => true, :label => '', :vertical => true %> 
+ <%= f.submit_tag 'Save Page' %> 
  <%= f.text_area :body, :rows => 30, :style => 'width:100%', :vertical => true %> 
  <%= f.text_field :reference, :vertical => true, :description => 'Optional external reference identifier' %>
  <%= f.text_area :description, :rows => 3, :style => 'width:100%', :vertical => true, :label => 'Optional Description' %> 
@@ -9,8 +10,10 @@
  <%= f.submit_tag 'Save Page' %> 
 <% end -%>
 
+<% if @page.id -%>
 <script>
 ChapterTree.saveError = <%= @page.errors.length > 0 ? 'true' : 'false' %>;
 $('page_body').onkeyup=function() { AutoSave.draftHandler(1,<%= @page.id %>); }
 $('page_body').onchange=function() { AutoSave.draftHandler(1,<%= @page.id %>); }
 </script>
+<% end -%>

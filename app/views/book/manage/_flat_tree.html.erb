@@ -1,0 +1,5 @@
+<ul id='chapter_tree' class='active_tree active_tree_branch'>
+  <% @chapters.each do |chapter|  %>
+    <%= render :partial => 'chapter_flat', :locals => { :chapter => chapter } %>
+  <% end %> 
+</ul>
