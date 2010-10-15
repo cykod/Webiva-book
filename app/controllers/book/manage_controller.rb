@@ -65,7 +65,7 @@ class Book::ManageController < ModuleController
 
     @chapters = @book.nested_pages
     
-    if @chapters.length == 0 && @book.book_type == 'chapter'
+    if @chapters.length == 0 && @book.chapter_book?
       @page = @book.book_pages.create(:name => 'Default Page',:created_by_id => myself.id)
       @page.move_to_child_of(@book.root_node)
       @book.reload

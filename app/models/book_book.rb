@@ -42,6 +42,10 @@ class BookBook < DomainModel
     self.book_type == 'flat'
   end
 
+  def chapter_book?
+    self.book_type == 'chapter'
+  end
+
   def flat_url?
     self.url_scheme == 'flat'
   end
