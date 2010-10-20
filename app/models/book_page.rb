@@ -30,6 +30,8 @@ class BookPage < DomainModel
   content_node :container_type => 'BookBook', :container_field => 'book_book_id',
     :except => Proc.new { |pg| !pg.parent_id }, :published => :published
 
+  cached_content :update => [ :book_book ]
+
   def full_title
     "#{self.book_book.name}: #{self.name}"
   end

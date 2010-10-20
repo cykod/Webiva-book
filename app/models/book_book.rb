@@ -25,6 +25,8 @@ class BookBook < DomainModel
 
   content_node_type :book, "BookPage", :content_name => :name, :title_field => :full_title, :url_field => :url
 
+  cached_content
+
   def content_admin_url(book_page_id)
     {:controller => '/book/manage', :action => 'edit', :path => [self.id, book_page_id], :title => 'Edit Book Page'.t}
   end

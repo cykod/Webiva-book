@@ -21,11 +21,15 @@ class Book::PageRenderer < ParagraphRenderer
 
     @page = self.find_page
 
-    @chapters = @book.nested_pages
+    cache_obj = @page ? @page : @book
 
-    @menu, selected = build_chapter_data(@chapters, @options.levels)
+    result = renderer_cache(cache_obj) do |cache|
+      @chapters = @book.nested_pages
+      @menu, selected = build_chapter_data(@chapters, @options.levels)
+      cache[:output] = menu_feature
+    end
 
-    render_paragraph :text => menu_feature()
+    render_paragraph :text => result.output
   end
 
   def content
@@ -44,13 +48,26 @@ class Book::PageRenderer < ParagraphRenderer
 
     @notice = flash[:book_save]
 
-    if @page
-      set_title(@page.name)
-      set_title(@page.name, "page")
-      set_content_node(@page.content_node.id) if @page.content_node
+    cache_obj = @page ? @page : @book
+    display_string = nil
+    skip = @notice ? true : false
+    result = renderer_cache(cache_obj, display_string, :skip => skip) do |cache|
+      cache[:output] = book_page_content_feature
+
+      if @page
+        cache[:title] = @page.name
+        cache[:content_node_id] = @page.content_node.id if @page.content_node
+      end
     end
 
-    render_paragraph :text => book_page_content_feature()
+    if result.title
+      set_title(result.title)
+      set_title(result.title, "page")
+    end
+
+    set_content_node(result.content_node_id) if result.content_node_id
+
+    render_paragraph :text => result.output
   end
 
   def wiki_editor
