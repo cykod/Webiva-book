@@ -118,20 +118,12 @@ class BookPage < DomainModel
     save_version(editor||self.created_by_id,self.body,edit_type||'admin editor',v_status||'auto',remote_ip,prev_version)
   end
 
-  def page_diff(version_body,orig_rev)
-    curr_ver_body = version_body.to_s
+  def page_diff(version_body)
+    curr_ver_body = version_body
 
     max_lines = 99999999 
     diff_header_length = 3
-    if !orig_rev.blank?
-      base_ver = book_page_versions.find_by_id(orig_rev)
-      if base_ver.body.nil?
-        page_body_old = ""
-      else
-
-        page_body_old = base_ver.body.gsub(/(\n| )/,"\\1\n") 
-      end
-    end
+    page_body_old = self.body.gsub(/(\n| )/,"\\1\n")
 
     if version_body.blank?
       page_body_new = ""

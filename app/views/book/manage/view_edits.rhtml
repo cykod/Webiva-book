@@ -29,8 +29,8 @@ pre {
  word-wrap: break-word;       /* Internet Explorer 5.5+ */
 }
 #edit-actions {
+ padding-top: 10px;
  height: 40px;
- clear: both;
 }
 
 </style>
@@ -65,13 +65,17 @@ pre {
 
 </script>
 
+<div class="active_table_wrapper">
 
-<% ajax_tabs ['Version Comparison',['Submitted Text']],'Version Comparison' do |t| -%>
 <div id="edit-actions">
   <div id="reviewed" <% if @review_button == false %> style="display:none;" <% end %>><span style='float:right' > &nbsp;<button onclick='RevisionDiff.markReviewed(<%= @vers_body.id %>);  return false;'>Mark as Reviewed</button></span></div>
 
 <div id="live"><span style='float:left'> <button onclick='RevisionDiff.acceptRevision(<%= @vers_body.id %>); return false;'>Make Version Live</button></span></div>
+<div class="clear"></div>
 </div>
+
+
+<% ajax_tabs ['Version Comparison',['Submitted Text']],'Version Comparison' do |t| -%>
 
 <% t.tab do -%>
 
@@ -114,3 +118,4 @@ window.opener.SCMS.select_tab_num(1)
 
 <% end -%>
 
+</div>

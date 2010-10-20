@@ -228,10 +228,9 @@ class Book::ManageController < ModuleController
   def view_wiki_edits
     @book = BookBook.find(params[:path][0])
     @vers_body = BookPageVersion.find(params[:version_id]) 
-    @orig_body = BookPageVersion.find_by_id(@vers_body.base_version_id) || @vers_body
     @page = @book.book_pages.find(@vers_body.book_page_id)
 
-    @wiki_body = @page.page_diff(@vers_body.body,@orig_body)
+    @wiki_body = @page.page_diff(@vers_body.body)
     @escaped_body = pre_escape @wiki_body
     @diff_body = output_diff_pretty(@escaped_body)
     @review_button = false unless @vers_body.version_status == 'submitted'
