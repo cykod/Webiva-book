@@ -2,6 +2,8 @@
 
 class Book::PageRenderer < ParagraphRenderer
 
+  include BookHelper
+
   features '/book/page_feature'
   features '/editor/menu_feature'
 
@@ -15,35 +17,38 @@ class Book::PageRenderer < ParagraphRenderer
     @options = paragraph_options(:chapters)
     @book = self.find_book
     return render_paragraph :text => 'No book found' unless @book
+    return render_paragraph :text => 'Unsupported book url scheme...' if @book.nested_url?
 
     @page = self.find_page
 
     @chapters = @book.nested_pages
 
-    root_url = @options.root_page_url.to_s + '/'
-    page_url = @page ? @page.url : ''
-    @menu, selected = build_chapter_data(@chapters, @options.levels-1, root_url, page_url)
+    @menu, selected = build_chapter_data(@chapters, @options.levels)
 
     render_paragraph :text => menu_feature()
   end
 
   def content
     @options = paragraph_options(:content)
+    @options.root_page_id = site_node.id
+
     @book = self.find_book
     return render_paragraph :text => 'No book found' unless @book
     return render_paragraph :text => 'Unsupported book url scheme...' if @book.nested_url?
 
     @page = self.find_page
-    return render_paragraph :text => 'No page found' if @page.nil? && editor?
-    raise SiteNodeEngine::MissingPageException.new( site_node, language ) unless @page
+    unless @options.enable_wiki
+      return render_paragraph :text => 'No page found' if @page.nil? && editor?
+      raise SiteNodeEngine::MissingPageException.new( site_node, language ) unless @page && @page.published?
+    end
 
-    @book_save = flash[:book_save]
+    @notice = flash[:book_save]
 
-    set_title(@page.name)
-    set_title(@page.name, "page")
-    set_content_node(@page.content_node.id) if @page.content_node
-
-    @edit_url = edit_url
+    if @page
+      set_title(@page.name)
+      set_title(@page.name, "page")
+      set_content_node(@page.content_node.id) if @page.content_node
+    end
 
     render_paragraph :text => book_page_content_feature()
   end
@@ -55,37 +60,51 @@ class Book::PageRenderer < ParagraphRenderer
     return render_paragraph :text => 'Unsupported book url scheme...' if @book.nested_url?
 
     @page = self.find_page
-    @page ||= @book.book_page.new if @options.allow_create
+    @page ||= @book.book_pages.new(:url => @missing_page_url) if @options.allow_create
     return render_paragraph :text => 'No page found' if @page.nil? && editor?
     raise SiteNodeEngine::MissingPageException.new( site_node, language ) unless @page
 
-    if request.post? && params[:commit]
+    if request.post? && params[:commit] && params[:page]
       if save_page
+        flash[:book_save] = @newpage ? "Page created and submitted for review".t : "Your edits have been submitted for review".t
+
+        action = @newpage ? 'new_page' : 'update_page'
+        action_path = "/book/#{action}"
+        paragraph_action(myself.action(action_path, :target => @page, :identifier => @page.name))
+        paragraph.run_triggered_actions(@page,action,myself)
+        
+        url = @page.published? && @options.root_page_url ? content_url(@options, @book, @page) : site_node.node_path
+
+        return redirect_paragraph url
       end
+    elsif @missing_page_url
+      @page.name = @missing_page_url.gsub(/[_\-]/, ' ').titleize
     end
 
-    set_title(@page.name)
-    set_title(@page.name, "page")
-    set_content_node(@page.content_node.id) if @page.content_node
-    
+    if @page && @page.id
+      set_title(@page.name)
+      set_title(@page.name, "page")
+      set_content_node(@page.content_node.id) if @page.content_node
+    end
+
+    @notice = flash[:book_save]
+
     render_paragraph :text => book_page_wiki_editor_feature()
   end
 
   protected
 
-  def build_chapter_data(chapters,level,path = '',current_path='')
+  def build_chapter_data(chapters, levels)
     chapter_selected = nil
     chaps = chapters.map do |chapter|
-      if chapter.published?
-        url =  ( path + chapter.url.to_s)
-        menu, selected = (level > 0) ? build_chapter_data(chapter.child_cache,level-1,path,current_path) : [ nil, nil ]
-        if !selected
-          selected = chapter.url.to_s != '' && chapter.url.to_s == current_path
-        end
+      if chapter.published? && levels > 0
+        menu, selected = build_chapter_data(chapter.child_cache, levels-1)
+        selected ||= @page && @page.id && chapter.id == @page.id
         chapter_selected ||= selected
+
         {
           :title => chapter.name,
-          :link => url,
+          :link => content_url(@options, @book, chapter), # from BookHelper
           :menu => menu,
           :selected => selected
         }
@@ -96,64 +115,26 @@ class Book::PageRenderer < ParagraphRenderer
     [ chaps, chapter_selected ]
   end
 
-  def edit_url
-    if @options.enable_wiki && @options.edit_page_url
-      "#{@options.edit_page_url}/#{@page.url}"
-    end
-  end
-  
   def save_page
-    if params[:commit] && @page
-      @newpage = @page.new_record?
-      
-      if @options.allow_auto_version
+    @newpage = @page.id.nil?
 
-        @page.body = params[:page_versions][:body]
-        @page.edit_type = "wiki_auto_publish"
-        @page.editor = myself.id
-        @page.v_status = "accepted wiki"
-        @page.remote_ip = @ipaddress
-        if @page.book_page_versions.latest_revision == []
-          @page.prev_version = nil
-        else 
-          @page.prev_version = @page.book_page_versions.latest_revision[0].id
-        end
-        @page.save
-        @page.move_to_child_of(@book.root_node) if @book.book_type == 'chapter' && @newpage
+    if @newpage || @options.allow_auto_version
 
-        flash[:book_save] = "Page Saved".t
+      @page.name = params[:page][:name] if @newpage
+      @page.body = params[:page][:body]
+      @page.remote_ip = request.remote_ip
+      @page.editor = myself.id
+      @page.edit_type = @options.auto_save_version ? 'wiki_auto_publish' : 'wiki'
+      @page.v_status = @options.auto_save_version ? 'accepted wiki' : 'submitted'
+      @page.published = @options.auto_save_version ? true : false
 
-        redirect_paragraph "#{@options.content_page_url}/#{@page.url}"
-        return true
-      elsif @page.new_record? 
+      return false unless @page.save
 
-        
-        @page.body = params[:page_versions][:body]
-        @page.edit_type = "wiki"
-        
-        @page.editor = params[:page_versions][:editor]||myself.id
-        @page.v_status = "submitted"
-        @page.remote_ip = @ipaddress
-        @page.prev_version = nil
-        @page.save
-        @page.move_to_child_of(@book.root_node) if @book.book_type == 'chapter' && @newpage
-
-        flash[:book_save] = "Page Created and Submitted for review".t
-
-        redirect_paragraph "#{@options.content_page_url}"
-        return true
-      else 
-        @prev_version = @page.book_page_versions.latest_revision
-        
-        @page.save_version(myself.id,params[:page_versions][:body],'wiki','submitted',@ipaddress,@prev_version[0].id)
-        
-        flash[:book_save] = "Your edits have been submitted for review.".t
-
-        redirect_paragraph  "#{@options.content_page_url}/#{@page.url}"
-        return true
-      end
-      return false
+      @page.move_to_child_of(@book.root_node) if @newpage && @book.chapter_book?
+      return true
     end
+
+    return @page.save_version(myself.id, params[:page][:body], 'wiki', 'submitted', request.remote_ip)
   end
 
   def find_book
@@ -189,6 +170,7 @@ class Book::PageRenderer < ParagraphRenderer
         @page = @book.first_page if @options.show_first_page
       elsif @book.flat_url?
         @page = @book.book_pages.find_by_url conn_id
+        @missing_page_url = conn_id unless @page
       elsif @book.id_url?
         @page = @book.book_pages.find_by_id conn_id
       end

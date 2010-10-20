@@ -21,7 +21,7 @@ class Book::PageController < ParagraphController
                  :flat_chapter => [ [:chapter_id,' Chapter URL',:path ]]
                },
     :outputs => [[:content_id, 'Content Identifier', :content]],
-    :triggers => [['New Page', 'new_page'], ['Wiki Update', 'wiki_update']]
+    :triggers => [['New Page', 'new_page'], ['Update Page', 'update_page']]
 
   class ChaptersOptions < HashModel
     attributes :book_id => 0, :levels => 0, :root_page_id => nil
@@ -43,13 +43,14 @@ class Book::PageController < ParagraphController
   end
 
   class ContentOptions < HashModel
-    attributes :book_id => nil, :show_first_page => false, :enable_wiki => false, :edit_page_id => nil
+    attributes :book_id => nil, :show_first_page => false, :enable_wiki => false, :edit_page_id => nil, :root_page_id => nil
     
     boolean_options :show_first_page, :enable_wiki
-    page_options :edit_page_id
+    page_options :edit_page_id, :root_page_id
 
     canonical_paragraph "BookBook", :book_id
 
+    # root_page_id is set in the Book::PageRenderer for a content paragraph
     options_form(
                  fld(:book_id, :select, :options => :book_options),
                  fld(:show_first_page, :yes_no, :label => 'View First Page by Default'),
@@ -63,14 +64,17 @@ class Book::PageController < ParagraphController
   end
 
   class WikiEditorOptions < HashModel
-    attributes :book_id => nil, :content_page_id => nil, :allow_create => false, :allow_auto_version => true
-    page_options :content_page_id
+    attributes :book_id => nil, :root_page_id => nil, :allow_create => false, :allow_auto_version => true
+
+    validates_presence_of :root_page_id
+
+    page_options :root_page_id
     boolean_options :allow_create, :allow_auto_version
 
     options_form(
                  fld('Page Display Control', :header),
                  fld(:book_id, :select, :options => :book_options),
-                 fld(:content_page_id, :page_selector),
+                 fld(:root_page_id, :page_selector),
                  fld('User Content Control', :header),
                  fld(:allow_create, :yes_no, :label => 'Allow new pages', :description => 'This allows users to create new pages by entering a new page name after the book URL \nor clicking on link to a blank page.  No system notification is given to the user.'),
                  fld(:allow_auto_version, :yes_no, :label => 'Auto Publish', :description => 'If users are allowed to create pages, this option will say whether or not they are \nautomatically published.  If YES, the page will appear in the chapterlist as any other \npage would.  If NO, the page must be set to publish from the admin panel')

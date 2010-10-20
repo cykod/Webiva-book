@@ -100,7 +100,7 @@ class BookPage < DomainModel
     cd
   end
 
-  def save_version(editor,version_body,v_type,v_status,ipaddress,orig_rev)
+  def save_version(editor,version_body,v_type,v_status,ipaddress,orig_rev=nil)
     self.book_page_versions.create(:name => self.name,
                                    :book_book_id => self.book_book_id,
                                    :base_version_id => orig_rev,
@@ -245,6 +245,16 @@ class BookPage < DomainModel
 
     page.move_to_child_of(page_parent || book.root_node) unless book.flat_book?
     page
+  end
+
+  def edit_page_url(base_edit_url)
+    return nil unless base_edit_url
+    case self.book_book.url_scheme
+    when 'id'
+      "#{base_edit_url}/#{self.book_book.id}/#{self.id}"
+    else
+      "#{base_edit_url}/#{self.book_book.id}#{self.path}"
+    end
   end
 
   protected

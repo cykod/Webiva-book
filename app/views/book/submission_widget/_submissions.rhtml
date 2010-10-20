@@ -4,6 +4,6 @@
     Book:<%= link_to h(truncate(t.book_book.name,:length => 40)),  t.book_book.content_admin_url(t.book_page_id)-%>
     </td>
   <td><%= t.created_at.to_s(:short) -%><br/>
-  <%= t.created_by.name||t.ipaddress  %> </td>
+  <%= t.created_by ? t.created_by : t.ipaddress %> </td>
 </tr>
 <% end -%>

@@ -1,6 +1,4 @@
 module BookHelper
-  
-
   def pre_escape(revision)
     revision.collect do |ln| 
       if !ln.is_a?(Array)
@@ -11,6 +9,7 @@ module BookHelper
       end
     end
   end
+
   def output_diff_pretty(revision)
     revision.collect do |ln| 
       if !ln.is_a?(Array)
@@ -23,5 +22,31 @@ module BookHelper
         end
       end
     end  
+  end
+
+  def edit_url(options, book, page=nil)
+    url = options.edit_page_url
+    url += "/#{book.id}" if options.book_id.blank? # using page connections
+    if page
+      if page.is_a?(String)
+        url += "/#{page}"
+      elsif book.id_url?
+        url += "/#{page.id}"
+      else
+        url += page.path
+      end
+    end
+    url
+  end
+
+  def content_url(options, book, page)
+    url = options.root_page_url
+    url += "/#{book.id}" if options.book_id.blank? # using page connections
+    if book.id_url?
+      url += "/#{page.id}"
+    else
+      url += page.path
+    end
+    url
   end
 end
