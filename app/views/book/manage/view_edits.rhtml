@@ -37,74 +37,61 @@ pre {
 
 <script>
 
-  RevisionDiff = {
-           updateTitle: function(page_id,title) {
-	   
-	       },
-       
-	   acceptRevision: function(version_id) {
-	       var params = { version_id:version_id };
-	       new Ajax.Request('<%= url_for :action => 'accept_wiki_edits', :path => [ @book.id ] %>',
-	       { parameters: params, evalScripts: true } );
-	       window.opener.SCMS.select_tab_num(3)
-	       
-	       },
+RevisionDiff = {
+  acceptRevision: function(version_id) {
+    var params = { version_id:version_id };
+    new Ajax.Request('<%= url_for :action => 'accept_wiki_edits', :path => [ @book.id ] %>',
+                     { parameters: params, evalScripts: true,
+                       onComplete: function() {
+                         if(window.opener.ChapterTree) {
+                           window.opener.SCMS.select_tab_num(3);
+                           window.opener.ChapterTree.loadVersionTable(<%= @page.id %>);
+                         }
+                         window.close();
+                       }
+                     });
+  },
 	  
-	   markReviewed: function(version_id) {
-	   
-	       var params = { version_id:version_id };
-	       new Ajax.Request('<%= url_for :action => 'review_wiki_edits', :path => [ @book.id ] %>',
-	       { parameters: params, evalScripts: true } );
-	       window.opener.SCMS.select_tab_num(3)
-	       window.close()
-       
-	       },
-       
-  
+  markReviewed: function(version_id) {
+    var params = { version_id:version_id };
+    new Ajax.Request('<%= url_for :action => 'review_wiki_edits', :path => [ @book.id ] %>',
+                     { parameters: params, evalScripts: true,
+                       onComplete: function() {
+                         if(window.opener.ChapterTree) {
+                           window.opener.SCMS.select_tab_num(3);
+                           window.opener.ChapterTree.loadVersionTable(<%= @page.id %>);
+                         }
+                         window.close();
+                       }
+                     });
   }
+}
 
+if(window.opener.ChapterTree) {
+  window.opener.SCMS.select_tab_num(1)
+}
 </script>
 
 <div class="active_table_wrapper">
 
 <div id="edit-actions">
-  <div id="reviewed" <% if @review_button == false %> style="display:none;" <% end %>><span style='float:right' > &nbsp;<button onclick='RevisionDiff.markReviewed(<%= @vers_body.id %>);  return false;'>Mark as Reviewed</button></span></div>
+  <% if @vers_body.version_status == 'submitted' -%>
+  <div id="reviewed"><span style='float:right' ><button onclick='RevisionDiff.markReviewed(<%= @vers_body.id %>);  return false;'><%= 'Mark as Reviewed'.t %></button></span></div>
+  <% end -%>
 
-<div id="live"><span style='float:left'> <button onclick='RevisionDiff.acceptRevision(<%= @vers_body.id %>); return false;'>Make Version Live</button></span></div>
-<div class="clear"></div>
+  <div id="live"><span style='float:left;'> <button onclick='RevisionDiff.acceptRevision(<%= @vers_body.id %>); return false;'><%= 'Make Version Live'.t %></button></span></div>
 </div>
 
 
 <% ajax_tabs ['Version Comparison',['Submitted Text']],'Version Comparison' do |t| -%>
 
 <% t.tab do -%>
-
-
-
-  <script>
-    RevisionDiff.updateTitle(<%= @vers_body.id %>,"Version Comparison");
-  </script>
-
-<script >
-
-window.opener.SCMS.select_tab_num(1)
-
-</script>
 <div id="wiki_diff">
   <%= @diff_body %>
 </div>
 <% end -%>
+
 <% t.tab do -%>
-
-  <script>
-    RevisionDiff.updateTitle(<%= @vers_body.id %>,"Version Comparison");
-  </script>
-
-<script >
-
-window.opener.SCMS.select_tab_num(1)
-
-</script>
 <div id="wiki_diff">
 <pre>
 <code>

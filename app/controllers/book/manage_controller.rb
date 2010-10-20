@@ -245,25 +245,22 @@ class Book::ManageController < ModuleController
   def review_wiki_edits
     @book = BookBook.find(params[:path][0])
     @version = @book.book_page_versions.find(params[:version_id])
-    @version.update_attributes(:version_status => "reviewed", :updated_at => Time.now)
-    
+    @version.update_attribute(:version_status, "reviewed")
     render :nothing => true
   end
 
   def accept_wiki_edits
     @book = BookBook.find(params[:path][0])
-    @version = @book.book_page_versions.find_by_id(params[:version_id])
- 
+    @version = @book.book_page_versions.find(params[:version_id])
     @page = @book.book_pages.find(@version.book_page_id)
     
     @page.edit_type = "admin editor"
     @page.editor = myself
     @page.body = @version.body
-  #  @page.prev_version = 
     @page.v_status = "accepted wiki"
     @page.save
     
-    @version.update_attributes(:updated_at => Time.now, :version_status => "reviewed")
+    @version.update_attribute(:version_status, "reviewed")
 
     render :nothing => true
 
