@@ -123,7 +123,7 @@ class BookPage < DomainModel
 
     max_lines = 99999999 
     diff_header_length = 3
-    page_body_old = self.body.gsub(/(\n| )/,"\\1\n")
+    page_body_old = self.body.gsub(/\r\n/,"\n").gsub(/(\n| )/,"\\1\n")
 
     if version_body.blank?
       page_body_new = ""
