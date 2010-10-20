@@ -73,7 +73,7 @@ class Book::PageRenderer < ParagraphRenderer
         paragraph_action(myself.action(action_path, :target => @page, :identifier => @page.name))
         paragraph.run_triggered_actions(@page,action,myself)
         
-        url = @page.published? && @options.root_page_url ? content_url(@options, @book, @page) : site_node.node_path
+        url = @page.published? ? content_url(@options, @book, @page) : @options.root_page_url
 
         return redirect_paragraph url
       end
@@ -86,8 +86,6 @@ class Book::PageRenderer < ParagraphRenderer
       set_title(@page.name, "page")
       set_content_node(@page.content_node.id) if @page.content_node
     end
-
-    @notice = flash[:book_save]
 
     render_paragraph :text => book_page_wiki_editor_feature()
   end
@@ -161,19 +159,16 @@ class Book::PageRenderer < ParagraphRenderer
     return unless @book
     return @page = @book.first_page if editor?
 
-    @page = @book.book_pages.find_by_reference(params[:ref]) if params[:ref]
+    conn_type, conn_id = page_connection(:flat_chapter)
 
-    if @page.nil?
-      conn_type, conn_id = page_connection(:flat_chapter)
-
-      if conn_id.blank?
-        @page = @book.first_page if @options.show_first_page
-      elsif @book.flat_url?
-        @page = @book.book_pages.find_by_url conn_id
-        @missing_page_url = conn_id unless @page
-      elsif @book.id_url?
-        @page = @book.book_pages.find_by_id conn_id
-      end
+    if conn_id.blank?
+      @page = @book.book_pages.find_by_reference(params[:ref]) if params[:ref]
+      @page ||= @book.first_page if @options.show_first_page
+    elsif @book.flat_url?
+      @page = @book.book_pages.find_by_url conn_id
+      @missing_page_url = conn_id unless @page
+    elsif @book.id_url?
+      @page = @book.book_pages.find_by_id conn_id
     end
 
     @page = nil if @page && ! @page.published?

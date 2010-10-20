@@ -11,8 +11,6 @@ class Book::PageFeature < ParagraphFeature
     <td align='left' width='33%'><cms:back><cms:page_link>&lt; <cms:name/></cms:page_link></cms:back></td>
     <td align='center' width='33%'><cms:parent> <cms:page_link>^ <cms:name/></cms:page_link></cms:parent></td>
     <td align='right' width='33%'><cms:forward><cms:page_link><cms:name/></cms:page_link> &gt;</cms:forward></td>
-
-    
     </tr>
     </table>
     
@@ -20,10 +18,10 @@ class Book::PageFeature < ParagraphFeature
     <h1><cms:parent><cms:name/> : </cms:parent><cms:title/></h1>
     <div class='page_body'>
       <cms:body/>
+    </div>
 
-    </div> 
-    <div class='page_children'>
-      <cms:children>
+    <cms:children>
+      <div class='page_children'>
         <h2>Sections:</h2>
         <ol>
           <cms:child>
@@ -32,16 +30,20 @@ class Book::PageFeature < ParagraphFeature
              </li>
           </cms:child>
         </ol>
-      </cms:children>
-    </div>
+      </div>
+    </cms:children>
+
     <cms:wiki_enabled>
-      <br/><hr/> <cms:edit_link>Edit</cms:edit_link>
+      <hr/>
+      <cms:edit_link>Edit</cms:edit_link>
     </cms:wiki_enabled>
    </cms:page>
 
    <cms:no_page>
      <cms:wiki_enabled>
-       <cms:create_link>This page is blank, click to add to it.</cms:create_link>
+       <div class='page_body'>
+         <cms:create_link>This page is blank, click to add to it.</cms:create_link>
+       </div>
      </cms:wiki_enabled>
    </cms:no_page>
   FEATURE
@@ -65,12 +67,13 @@ class Book::PageFeature < ParagraphFeature
 
   feature :book_page_wiki_editor, :default_feature => <<-FEATURE
   <cms:page>
-    Edit: <cms:title/><br/>
+    <h1><span>Edit</span> <cms:parent><cms:name/> : </cms:parent><cms:title/></h1>
   </cms:page>
+
   <cms:no_page>
-    <cms:notice><div class='notice'><cms:value/></div></cms:notice>
-    Create a new book page<br/>
+    <h1><span>Add a new page</span></h1>
   </cms:no_page>
+
   <cms:form>
     <cms:no_page>
       <cms:name/><br/>
@@ -88,7 +91,7 @@ class Book::PageFeature < ParagraphFeature
       c.expansion_tag('book') { |t| t.locals.book = data[:book] }
       book_details_tags(data, c)
 
-      c.h_tag('no_page:notice') { |t| data[:notice] }
+      c.expansion_tag('logged_in') { |t| myself.id }
 
       c.form_for_tag('form', :page) { |t| data[:page] }
         c.field_tag('form:name', :field => 'name')
