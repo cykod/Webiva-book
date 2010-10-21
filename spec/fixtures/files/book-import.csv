@@ -1,6 +1,6 @@
 Page URL,Page Title,Description,Published,Page Body,Parent URL
-,"chapter one",,"true","tons",
-,"duck",,"true","of",
-,"duck1",,"true","fun",
-,"duck2",,,"with",
-,"goose",,,"pages",
+chapter-one,"chapter one",,"true","tons",
+duck,"duck",,"true","of",
+duck1,"duck1",,"true","fun",duck
+duck2,"duck2",,,"with",
+goose,"goose",,,"pages",

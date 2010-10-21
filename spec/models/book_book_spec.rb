@@ -7,17 +7,15 @@ describe BookBook do
 
   reset_domain_tables :book_books, :book_pages, :book_page_versions, :end_users
 
-  before(:each) do 
-    mock_editor
-    def book(title)
-      BookBook.create(:name => title,:created_by_id => @myself.id)
-    end
-
-    @book1 = book("book basic")
+  def book(title)
+    BookBook.create(:name => title)
   end
 
   describe "basics" do
-    specify { @book1.should be_valid }
+    it "should require a name" do
+      @book = BookBook.new
+      @book.should have(1).error_on(:name)
+    end
 
     it "should automatically create a root node" do
       assert_difference 'BookBook.count', 1 do
@@ -26,6 +24,31 @@ describe BookBook do
           @book.root_node.should_not be_nil
         end 
       end 
+    end
+
+    it "should create a root node for chapter books only" do
+      @book = BookBook.new :name => 'chapter'
+      @book.save
+
+      assert_difference 'BookPage.count', 1 do
+        @book.root_node
+      end
+
+      @book = BookBook.new :name => 'flat'
+      @book.book_type = 'flat'
+      @book.save
+
+      assert_difference 'BookPage.count', 0 do
+        @book.root_node
+      end
+    end
+
+    it "should be able to get the first page of a book" do
+      chapter_book
+      @cb.first_page.id.should == @page1.id
+
+      flat_book
+      @flatbook.first_page.id.should == @flatpage1.id
     end
   end
 
@@ -58,20 +81,22 @@ describe BookBook do
   describe 'imports' do
     before(:each) do
       @book = book("test import")
-      @book.book_pages.create(:name => 'new_page', :created_by_id => @myself.id)
-      @book.book_pages.create(:name => 'newer_page', :created_by_id => @myself.id)
+      @book.book_pages.create(:name => 'new_page')
+      @book.book_pages.create(:name => 'newer_page')
 
-      fdata = book_fixture_file_upload("files/book-import.csv")
-      @df = DomainFile.create(:filename => fdata)
-      fdata = book_fixture_file_upload("files/book-import2.csv")
-      @df2 = DomainFile.create(:filename => fdata)
+      @df = DomainFile.create(:filename => book_fixture_file_upload("files/book-import.csv"))
     end
 
     it 'should parse an insert row of csv' do
       assert_difference 'BookPage.count', 6 do
         @book.import_book(@df.filename,@myself)
-        @book.book_pages.find_by_name('goose').should_not be_nil
       end
+
+      @book.book_pages.find_by_name('goose').should_not be_nil
+
+      @duck = @book.book_pages.find_by_name('duck')
+      @duck1 = @book.book_pages.find_by_name('duck1')
+      @duck1.parent_id.should == @duck.id
     end
   end
 end
