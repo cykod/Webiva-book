@@ -24,7 +24,7 @@ class Book::PageController < ParagraphController
     :triggers => [['New Page', 'new_page'], ['Update Page', 'update_page']]
 
   class ChaptersOptions < HashModel
-    attributes :book_id => 0, :levels => 0, :root_page_id => nil
+    attributes :book_id => nil, :levels => 1, :root_page_id => nil
 
     validates_presence_of :root_page_id
 
@@ -38,7 +38,7 @@ class Book::PageController < ParagraphController
                  )
 
     def book_options
-      [['--Use Page Connection--',0]] + BookBook.select_options
+      [['--Use Page Connection--', nil]] + BookBook.select_options
     end
   end
 
@@ -59,12 +59,16 @@ class Book::PageController < ParagraphController
                  )
 
     def book_options
-      [['--Use Page Connection--',0]] + BookBook.select_options
+      [['--Use Page Connection--', nil]] + BookBook.select_options
+    end
+
+    def wiki?
+      self.enable_wiki && self.edit_page_url
     end
   end
 
   class WikiEditorOptions < HashModel
-    attributes :book_id => nil, :root_page_id => nil, :allow_create => false, :allow_auto_version => true
+    attributes :book_id => nil, :root_page_id => nil, :allow_create => false, :allow_auto_version => false
 
     validates_presence_of :root_page_id
 
@@ -81,7 +85,7 @@ class Book::PageController < ParagraphController
                  )
 
     def book_options
-      [['--Use Page Connection--',0]] + BookBook.select_options
+      [['--Use Page Connection--', nil]] + BookBook.select_options
     end
 
     def options_partial

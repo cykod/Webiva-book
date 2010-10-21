@@ -3,184 +3,514 @@ require  File.expand_path(File.dirname(__FILE__)) + "/../../book_spec_helper.rb"
 
 describe Book::PageRenderer, :type => :controller do
   include BookSpecHelper
-
   controller_name :page
 
   integrate_views
 
   reset_domain_tables :book_books, :book_pages, :book_page_versions, :page_paragraphs, :site_nodes, :end_users
   
-  # create a dummy book & pages
-  before(:each) do
-    chapter_book
-    mock_user
-  
-    
+  def root_page
+    @root_page ||= SiteVersion.default.root.add_subpage('book')
   end
-  describe 'using page connection' do
-    
-    it 'should find a book by page connection' do
 
-      @rnd = build_renderer('/page', '/book/page/content', {}, {:book => [ :book_id, @cb.id ]})
-      BookBook.should_receive( :find_by_id ).with(@cb.id).and_return(@cb)
-      @rnd.should_render_feature( :book_page_content )
-      renderer_get( @rnd )
-    end
+  def edit_page
+    @edit_page ||= SiteVersion.default.root.add_subpage('edit')
+  end
 
-    it 'should not display unpublished pages' do
+  def generate_page_renderer(paragraph, options={}, inputs={})
+    @rnd = build_renderer('/page', '/book/page/' + paragraph, options, inputs)
+    @rnd.should_receive(:site_node).any_number_of_times.and_return(root_page) if paragraph == 'content'
+    @rnd
+  end
 
-      @rnd = build_renderer('/page', '/book/page/chapters', {}, {:book => [ :book_id, @cb.id ]})
-      BookBook.should_receive( :find_by_id ).with(@cb.id).and_return(@cb)
-      @rnd.should_render_feature( :menu )
-      renderer_get( @rnd )
-      @rnd.renderer_feature_data[:menu][2][:title].should == @page3.name
-    end
+  describe 'Chapters Paragraph' do
+    describe 'Chapter Book' do
+      before(:each) do
+        @book = chapter_book
+      end
 
-    it 'should display a chapter list based on id ' do
+      it 'should raise page not found if missing book' do
+        @book.book_type.should == 'chapter'
+        @book.url_scheme.should == 'flat'
+        @rnd = generate_page_renderer('chapters', {:root_page_id => root_page.id})
+        lambda { renderer_get @rnd }.should raise_error(SiteNodeEngine::MissingPageException)
+      end
 
-      @rnd = build_renderer('/page', '/book/page/chapters', {:levels => 0}, {:book => [ :book_id, @cb.id ]})
-      BookBook.should_receive( :find_by_id ).with(@cb.id).and_return(@cb)
-      @rnd.should_render_feature( :menu )
-      renderer_get( @rnd )
-      
-      @rnd.renderer_feature_data[:menu][0][:title].should == @page1.name
-      @rnd.renderer_feature_data[:menu][-1][:title].should == @page5.name
-    end
-    
-    it 'should  display nested menus if requested, by default, only the top level id displayed' do
-      @rnd = build_renderer('/page', '/book/page/chapters', {:levels => 2}, {:book => [ :book_id, @cb.id ]})
-      BookBook.should_receive( :find_by_id ).with(@cb.id).and_return(@cb)
-      @rnd.should_render_feature( :menu )
-      renderer_get( @rnd )
-      
-      @rnd.renderer_feature_data[:menu][0][:title].should == @page1.name
-      @rnd.renderer_feature_data[:menu][1][:title].should == @page2.name
-      @rnd.renderer_feature_data[:menu][2][:title].should == @page3.name
-      @rnd.renderer_feature_data[:menu][3][:title].should == @page4.name
+      it 'should find a book by page connection' do
+        @rnd = generate_page_renderer('chapters', {:root_page_id => root_page.id}, {:book => [:book_id, @book.id]})
+        renderer_get @rnd
+      end
 
-      # The book created above has 3 levels in the nested tree.  This test is checking to see that only 2 levels are being rendered.  This block steps through the the menu level 1 searching for menu level 2, and in menu level 2 another block verifies that menu level 3 is nil
-      @rnd.renderer_feature_data[:menu].each do |menu|
-        if menu[:menu]
-          menu[:menu].each {|submenu| submenu[:menu].should be_nil }
-          
-        end    
+      it 'should find a book by input' do
+        @rnd = generate_page_renderer('chapters', {:root_page_id => root_page.id, :book_id => @book.id})
+        renderer_get @rnd
+      end
+
+      it 'should mark page as selected' do
+        @rnd = generate_page_renderer('chapters', {:root_page_id => root_page.id, :book_id => @book.id}, {:flat_chapter => [:chapter_id, @page1.url]})
+        @rnd.should_render_feature :menu
+        renderer_get @rnd
+        @rnd.renderer_feature_data[:menu][0][:selected].should be_true
+        @rnd.renderer_feature_data[:menu][1][:selected].should be_false
+      end
+
+      it 'should not care if page is not found' do
+        @rnd = generate_page_renderer('chapters', {:root_page_id => root_page.id, :book_id => @book.id}, {:flat_chapter => [:chapter_id, 'invalid url']})
+        @rnd.should_render_feature :menu
+        renderer_get @rnd
+        @rnd.renderer_feature_data[:menu][0][:selected].should be_false
+        @rnd.renderer_feature_data[:menu][1][:selected].should be_false
+      end
+
+      it 'should not include unpublished pages in menu' do
+        @page2.update_attribute :published, false
+        @rnd = generate_page_renderer('chapters', {:root_page_id => root_page.id, :book_id => @book.id})
+        @rnd.should_render_feature :menu
+        renderer_get @rnd
+
+        @rnd.renderer_feature_data[:menu].find { |link| link[:title] == @page1.name }.should_not be_nil
+
+        @rnd.renderer_feature_data[:menu].each do |link|
+          link[:title].should_not == @page2.name
+        end
       end
     end
-  end  
-  describe 'wiki editing' do
 
-    it 'should save page versions edited by a user' do
-      @content_page = SiteVersion.default.root_node.add_subpage 'content_book'
-      @rnd = build_renderer('/page', '/book/page/wiki_editor', 
-                            {:allow_create => true,
-                              :book_id => @cb.id, 
-                              :content_page_id => @content_page.id
-                            },
-                            {:book => [ :book_id, @cb.id ],
-                             :flat_chapter =>[ :chapter_id ,@page1.url ]
-                            })
-     
-      BookBook.should_receive( :find_by_id ).with(@cb.id).and_return(@cb)
+    describe 'Chapter Book using ids' do
+      before(:each) do
+        @book = chapter_book 'id'
+      end
 
-      @page1.book_page_versions.count.should == 1
+      it 'should raise page not found if missing book' do
+        @book.book_type.should == 'chapter'
+        @book.url_scheme.should == 'id'
+        @rnd = generate_page_renderer('chapters', {:root_page_id => root_page.id})
+        lambda { renderer_get @rnd }.should raise_error(SiteNodeEngine::MissingPageException)
+      end
 
-      renderer_post( @rnd, 
-            :commit => 'Submit',
-            :page_versions => {
-              :body => 'content book page version, new page'})
+      it 'should find a book by page connection' do
+        @rnd = generate_page_renderer('chapters', {:root_page_id => root_page.id}, {:book => [:book_id, @book.id]})
+        renderer_get @rnd
+      end
 
-      @page1.reload
-      @page1.book_page_versions.count.should == 2
+      it 'should find a book by input' do
+        @rnd = generate_page_renderer('chapters', {:root_page_id => root_page.id, :book_id => @book.id})
+        renderer_get @rnd
+      end
 
+      it 'should mark page as selected' do
+        @page1.id.to_s.should == @page1.url
+        @page1.path.to_s.should == "/#{@page1.url}"
+        @rnd = generate_page_renderer('chapters', {:root_page_id => root_page.id, :book_id => @book.id}, {:flat_chapter => [:chapter_id, @page1.url]})
+        @rnd.should_render_feature :menu
+        renderer_get @rnd
+        @rnd.renderer_feature_data[:menu][0][:selected].should be_true
+        @rnd.renderer_feature_data[:menu][1][:selected].should be_false
+      end
+
+      it 'should not care if page is not found' do
+        @rnd = generate_page_renderer('chapters', {:root_page_id => root_page.id, :book_id => @book.id}, {:flat_chapter => [:chapter_id, 'invalid url']})
+        @rnd.should_render_feature :menu
+        renderer_get @rnd
+        @rnd.renderer_feature_data[:menu][0][:selected].should be_false
+        @rnd.renderer_feature_data[:menu][1][:selected].should be_false
+      end
+
+      it 'should not include unpublished pages in menu' do
+        @page2.update_attribute :published, false
+        @rnd = generate_page_renderer('chapters', {:root_page_id => root_page.id, :book_id => @book.id})
+        @rnd.should_render_feature :menu
+        renderer_get @rnd
+
+        @rnd.renderer_feature_data[:menu].find { |link| link[:title] == @page1.name }.should_not be_nil
+
+        @rnd.renderer_feature_data[:menu].each do |link|
+          link[:title].should_not == @page2.name
+        end
+      end
     end
 
-    it 'should save the correct user as editor if one available' do
-      @u1 = EndUser.push_target('test11111@webiva.com')
-      @u2 = EndUser.push_target('test22222@webiva.com')
-      
+    describe 'Chapter Book using nested' do
+      before(:each) do
+        @book = chapter_book 'nested'
+      end
 
-      ## Create a page as one user, and update that page as another user.
-      @content_page = SiteVersion.default.root_node.add_subpage 'content_book'
-      
-      @bb = BookBook.new(:name => "Test Username Updates")
-      @bb.save
-      @pg = @bb.book_pages.create(:name => "init page should have user 1", :editor => @u1.id)
-    
-      @pg.body = "user should be u1.id"
-      @pg.editor = @u1.id
-      @pg.save
+      it 'should raise page not found if missing book' do
+        @book.book_type.should == 'chapter'
+        @book.url_scheme.should == 'nested'
+        @rnd = generate_page_renderer('chapters', {:root_page_id => root_page.id})
+        lambda { renderer_get @rnd }.should raise_error(SiteNodeEngine::MissingPageException)
+      end
 
-      @pg.book_page_versions[0].created_by_id.should == @u1.id
-      
-      @rnd = build_renderer('/page', '/book/page/wiki_editor',
-                            {:allow_create => true,
-                              :book_id => @bb.id,
-                              :content_page_id => @content_page.id,
-                              :allow_auto_version => false
-                            },
-                            {:book => [ :book_id, @bb.id ],
-                              :flat_chapter =>[ :chapter_id ,@pg.url ]
-                            })
+      it 'should raise page not found because it is a nested url book' do
+        @rnd = generate_page_renderer('chapters', {:root_page_id => root_page.id}, {:book => [:book_id, @book.id]})
+        lambda { renderer_get @rnd }.should raise_error(SiteNodeEngine::MissingPageException)
+      end
+    end
 
-      BookBook.should_receive( :find_by_id ).with(@bb.id).and_return(@bb)
-      @pg.book_page_versions.count.should == 2
-      
-      
-      renderer_post( @rnd, :commit => "Submit", :path => [@pg.id], :page_versions => {:body => "content book page version orig page", :editor => @u2.id})
+    describe 'Flat Book' do
+      before(:each) do
+        @book = flat_book
+        @page1 = @book.book_pages[0]
+        @page2 = @book.book_pages[1]
+      end
 
-      @pg.book_page_versions[1].created_by_id.should == @u1.id
+      it 'should raise page not found if missing book' do
+        @book.book_type.should == 'flat'
+        @book.url_scheme.should == 'flat'
+        @rnd = generate_page_renderer('chapters', {:root_page_id => root_page.id})
+        lambda { renderer_get @rnd }.should raise_error(SiteNodeEngine::MissingPageException)
+      end
 
-    end     
+      it 'should find a book by page connection' do
+        @rnd = generate_page_renderer('chapters', {:root_page_id => root_page.id}, {:book => [:book_id, @book.id]})
+        renderer_get @rnd
+      end
+
+      it 'should find a book by input' do
+        @rnd = generate_page_renderer('chapters', {:root_page_id => root_page.id, :book_id => @book.id})
+        renderer_get @rnd
+      end
+
+      it 'should mark page as selected' do
+        @rnd = generate_page_renderer('chapters', {:root_page_id => root_page.id, :book_id => @book.id}, {:flat_chapter => [:chapter_id, @page1.url]})
+        @rnd.should_render_feature :menu
+        renderer_get @rnd
+        @rnd.renderer_feature_data[:menu][0][:selected].should be_true
+        @rnd.renderer_feature_data[:menu][1][:selected].should be_false
+      end
+
+      it 'should not care if page is not found' do
+        @rnd = generate_page_renderer('chapters', {:root_page_id => root_page.id, :book_id => @book.id}, {:flat_chapter => [:chapter_id, 'invalid url']})
+        @rnd.should_render_feature :menu
+        renderer_get @rnd
+        @rnd.renderer_feature_data[:menu][0][:selected].should be_false
+        @rnd.renderer_feature_data[:menu][1][:selected].should be_false
+      end
+
+      it 'should not include unpublished pages in menu' do
+        @page2.update_attribute :published, false
+        @rnd = generate_page_renderer('chapters', {:root_page_id => root_page.id, :book_id => @book.id})
+        @rnd.should_render_feature :menu
+        renderer_get @rnd
+
+        @rnd.renderer_feature_data[:menu].find { |link| link[:title] == @page1.name }.should_not be_nil
+
+        @rnd.renderer_feature_data[:menu].each do |link|
+          link[:title].should_not == @page2.name
+        end
+      end
+    end
   end
-  describe 'Auto Publishing Wiki' do
 
-    def build_auto_publish(url,opts={}) 
-      @rnd = build_renderer('/page', '/book/page/wiki_editor', {:allow_create => true, :book_id => @bb.id, :book_page_id => @pg.id, :content_page_id => @content_page.id, :allow_auto_version => true }.merge(opts), {:book => [ :book_id, @bb.id ], :flat_chapter =>[ :chapter_id ,url ] })
-    end
-    before(:each) do
-      @u1 = EndUser.push_target('test11111@webiva.com')
-      @content_page = SiteVersion.default.root_node.add_subpage 'content_book'
-      @bb = BookBook.create(:name => "Test AutoPublish Versions")
-      @pg = @bb.book_pages.create(:name => "Page Save", :editor => @u1.id)
-      @pg.move_to_child_of(@bb.root_node)
-      @pg.body = "Auto Publish Page Body 1st"
-      @pg.editor = @u1.id
-      @pg.save
-    end
-   
-    
-    it 'should create a version of an auto-published updated page' do
-      build_auto_publish(@pg.url, {:allow_auto_version => true}) 
-      BookBook.should_receive( :find_by_id ).with(@bb.id).and_return(@bb)
-      @pg.book_page_versions.length.should == 2
-      renderer_post( @rnd, :commit => "Submit", :path => [@bb.name, @rnd.site_node.node_path, @pg.name], :book_page_id => @pg.id, :page_versions => {:body => "Auto Publish Page Body Now 2nd"}, :editor => @u1.id)
-      @pg.reload
-      @pg.book_page_versions.count.should == 3
-    end
-    it 'should create a version of an auto-published new page' do
-      build_auto_publish("newpage", {:allow_auto_version => true}) 
-      BookBook.should_receive( :find_by_id ).with(@bb.id).and_return(@bb)
-      renderer_post( @rnd, :commit => "Submit", :path => [@bb.name, @rnd.site_node.node_path, "newpage"], :book_page_id => "", :page_versions => {:body => "Auto Publish Page Body 1st"}, :editor => @u1.id)
+  describe 'Content Paragraph' do
+    describe 'Chapter Book' do
+      before(:each) do
+        @book = chapter_book
+      end
 
-      @new_pg = @bb.book_pages.find_by_name("newpage")
-      @new_pg.book_page_versions.count.should == 1
-    end
-    it 'should create a version of a non-auto-published updated page' do
-      build_auto_publish(@pg.url, {:allow_auto_version => false}) 
-      BookBook.should_receive( :find_by_id ).with(@bb.id).and_return(@bb)
-      @pg.book_page_versions.length.should == 2
-      renderer_post( @rnd, :commit => "Submit", :path => [@bb.name, @rnd.site_node.node_path, @pg.name], :book_page_id => @pg.id, :page_versions => {:body => "Auto Publish Page Body Now 2nd"}, :editor => @u1.id)
-      @pg.reload
-      @pg.book_page_versions.count.should == 3
-    end
-    it 'should create a version of a non-auto-published new page' do
-      build_auto_publish("newpage", {:allow_auto_version => false}) 
-      BookBook.should_receive( :find_by_id ).with(@bb.id).and_return(@bb)
-      renderer_post( @rnd, :commit => "Submit", :path => [@bb.name, @rnd.site_node.node_path, "newpage"], :book_page_id => "", :page_versions => {:body => "Auto Publish Page Body 1st"}, :editor => @u1.id)
-      @new_pg = @bb.book_pages.find_by_name("newpage")
-      @new_pg.book_page_versions.count.should == 1
+      it 'should raise page not found if missing book' do
+        @rnd = generate_page_renderer('content')
+        lambda { renderer_get @rnd }.should raise_error(SiteNodeEngine::MissingPageException)
+      end
 
+      it 'should raise page not found if page is missing' do
+        @rnd = generate_page_renderer('content', {}, {:book => [:book_id, @book.id]})
+        lambda { renderer_get @rnd }.should raise_error(SiteNodeEngine::MissingPageException)
+      end
+
+      it 'should raise page not found if page is missing' do
+        @rnd = generate_page_renderer('content', {:book_id => @book.id})
+        lambda { renderer_get @rnd }.should raise_error(SiteNodeEngine::MissingPageException)
+      end
+
+      it 'should raise page not found if page is not published' do
+        @page2.update_attribute :published, false
+        @rnd = generate_page_renderer('content', {:book_id => @book.id}, {:flat_chapter => [:chapter_id, @page2.url]})
+        lambda { renderer_get @rnd }.should raise_error(SiteNodeEngine::MissingPageException)
+      end
+
+      it 'should display first page' do
+        @rnd = generate_page_renderer('content', {:show_first_page => true}, {:book => [:book_id, @book.id]})
+        renderer_get @rnd
+      end
+
+      it 'should display first page' do
+        @rnd = generate_page_renderer('content', {:show_first_page => true, :book_id => @book.id})
+        renderer_get @rnd
+      end
+
+      it 'should display page' do
+        @rnd = generate_page_renderer('content', {:show_first_page => true, :book_id => @book.id}, {:flat_chapter => [:chapter_id, @page2.url]})
+        renderer_get @rnd
+        response.body.should include(@page2.name)
+      end
+
+      it 'should display page' do
+        @rnd = generate_page_renderer('content', {:show_first_page => true, :book_id => @book.id})
+        renderer_get @rnd, :ref => @page2.reference
+        response.body.should include(@page2.name)
+      end
+
+      it 'should display create page' do
+        @rnd = generate_page_renderer('content', {:enable_wiki => true, :edit_page_id => edit_page.id, :book_id => @book.id})
+        renderer_get @rnd
+        response.body.should include(edit_page.node_path)
+      end
+
+      it 'should display edit page' do
+        @rnd = generate_page_renderer('content', {:show_first_page => true, :enable_wiki => true, :edit_page_id => edit_page.id, :book_id => @book.id})
+        renderer_get @rnd
+        response.body.should include("#{edit_page.node_path}#{@page1.path}")
+      end
+
+      it 'should display edit page' do
+        @rnd = generate_page_renderer('content', {:show_first_page => true, :enable_wiki => true, :edit_page_id => edit_page.id, :book_id => @book.id}, {:flat_chapter => [:chapter_id, @page2.url]})
+        renderer_get @rnd
+        response.body.should include("#{edit_page.node_path}#{@page2.path}")
+      end
+
+      it 'should not display edit page' do
+        @rnd = generate_page_renderer('content', {:show_first_page => true, :enable_wiki => false, :edit_page_id => edit_page.id, :book_id => @book.id}, {:flat_chapter => [:chapter_id, @page2.url]})
+        renderer_get @rnd
+        response.body.should_not include("#{edit_page.node_path}#{@page2.path}")
+      end
+
+      it 'should not display edit page' do
+        @rnd = generate_page_renderer('content', {:show_first_page => true, :enable_wiki => true, :edit_page_id => nil, :book_id => @book.id}, {:flat_chapter => [:chapter_id, @page2.url]})
+        renderer_get @rnd
+        response.body.should_not include("#{edit_page.node_path}#{@page2.path}")
+      end
     end
 
+    describe 'Content Book using nested' do
+      before(:each) do
+        @book = chapter_book 'nested'
+      end
+
+      it 'should raise page not found because it is a nested url book' do
+        @rnd = generate_page_renderer('content', {:show_first_page => true, :book_id => @book.id})
+        lambda { renderer_get @rnd }.should raise_error(SiteNodeEngine::MissingPageException)
+      end
+    end
+
+    describe 'Flat Book' do
+      before(:each) do
+        @book = flat_book
+        @page1 = @book.book_pages[0]
+        @page2 = @book.book_pages[1]
+      end
+
+      it 'should display first page' do
+        @rnd = generate_page_renderer('content', {:show_first_page => true, :book_id => @book.id})
+        renderer_get @rnd
+      end
+    end
+  end
+
+  describe 'Wiki Editor Paragraph' do
+    describe 'Chapter Book' do
+      before(:each) do
+        @book = chapter_book
+      end
+
+      it 'should raise page not found if missing book' do
+        @rnd = generate_page_renderer('wiki_editor', {:root_page_id => root_page.id})
+        lambda { renderer_get @rnd }.should raise_error(SiteNodeEngine::MissingPageException)
+      end
+
+      it 'should raise page not found if page is missing' do
+        @rnd = generate_page_renderer('wiki_editor', {:root_page_id => root_page.id}, {:book => [:book_id, @book.id]})
+        lambda { renderer_get @rnd }.should raise_error(SiteNodeEngine::MissingPageException)
+      end
+
+      it 'should raise page not found if page is missing' do
+        @rnd = generate_page_renderer('wiki_editor', {:root_page_id => root_page.id, :book_id => @book.id})
+        lambda { renderer_get @rnd }.should raise_error(SiteNodeEngine::MissingPageException)
+      end
+
+      it 'should raise page not found if page is not published' do
+        @page2.update_attribute :published, false
+        @rnd = generate_page_renderer('wiki_editor', {:root_page_id => root_page.id, :book_id => @book.id}, {:flat_chapter => [:chapter_id, @page2.url]})
+        lambda { renderer_get @rnd }.should raise_error(SiteNodeEngine::MissingPageException)
+      end
+
+      it 'should display create page' do
+        @rnd = generate_page_renderer('wiki_editor', {:root_page_id => root_page.id, :allow_create => true}, {:book => [:book_id, @book.id]})
+        renderer_get @rnd
+        response.body.should include('page[name]')
+        response.body.should include('page[body]')
+      end
+
+      it 'should display create page' do
+        @rnd = generate_page_renderer('wiki_editor', {:root_page_id => root_page.id, :allow_create => true, :book_id => @book.id})
+        renderer_get @rnd
+        response.body.should include('page[name]')
+        response.body.should include('page[body]')
+      end
+
+      it 'should display create page' do
+        @rnd = generate_page_renderer('wiki_editor', {:root_page_id => root_page.id, :allow_create => true, :book_id => @book.id}, {:flat_chapter => [:chapter_id, 'missing-page-name']})
+        renderer_get @rnd
+        response.body.should include('page[name]')
+        response.body.should include('Missing Page Name')
+        response.body.should include('page[body]')
+      end
+
+      it 'should display edit page' do
+        @rnd = generate_page_renderer('wiki_editor', {:root_page_id => root_page.id, :book_id => @book.id}, {:flat_chapter => [:chapter_id, @page2.url]})
+        renderer_get @rnd
+        response.body.should_not include('page[name]')
+        response.body.should include('page[body]')
+      end
+
+      it 'should create a page' do
+        @rnd = generate_page_renderer('wiki_editor', {:root_page_id => root_page.id, :allow_create => true, :book_id => @book.id})
+        assert_difference 'BookPageVersion.count', 1 do
+          assert_difference 'BookPage.count', 1 do
+            renderer_post @rnd, :commit => 'Submit', :page => {:name => 'My New Page', :body => 'My New Body'}
+          end
+        end
+
+        @page = BookPage.last
+        @version = @page.book_page_versions.last
+        @version.version_status.should == 'submitted'
+        @version.version_type.should == 'wiki'
+        @page.url.should == 'my-new-page'
+        @page.path.should == '/my-new-page'
+        @page.name.should == 'My New Page'
+        @page.body.should == 'My New Body'
+        @page.published.should be_false
+
+        @rnd.should redirect_paragraph(root_page.node_path)
+      end
+
+      it 'should create a page' do
+        @rnd = generate_page_renderer('wiki_editor', {:root_page_id => root_page.id, :allow_create => true, :book_id => @book.id}, {:flat_chapter => [:chapter_id, 'new-page2']})
+        assert_difference 'BookPageVersion.count', 1 do
+          assert_difference 'BookPage.count', 1 do
+            renderer_post @rnd, :commit => 'Submit', :page => {:name => 'My New Page', :body => 'My New Body'}
+          end
+        end
+
+        @page = BookPage.last
+        @version = @page.book_page_versions.last
+        @version.version_status.should == 'submitted'
+        @version.version_type.should == 'wiki'
+        @page.name.should == 'My New Page'
+        @page.body.should == 'My New Body'
+        @page.published.should be_false
+        @page.url.should == 'new-page2'
+        @page.path.should == '/new-page2'
+
+        @rnd.should redirect_paragraph(root_page.node_path)
+      end
+
+      it 'should create a page' do
+        @rnd = generate_page_renderer('wiki_editor', {:root_page_id => root_page.id, :allow_create => true, :allow_auto_version => true, :book_id => @book.id}, {:flat_chapter => [:chapter_id, 'new-page2']})
+        assert_difference 'BookPageVersion.count', 1 do
+          assert_difference 'BookPage.count', 1 do
+            renderer_post @rnd, :commit => 'Submit', :page => {:name => 'My New Page', :body => 'My New Body'}
+          end
+        end
+
+        @page = BookPage.last
+        @version = @page.book_page_versions.last
+        @version.version_status.should == 'accepted wiki'
+        @version.version_type.should == 'wiki_auto_publish'
+        @page.name.should == 'My New Page'
+        @page.body.should == 'My New Body'
+        @page.published.should be_true
+        @page.url.should == 'new-page2'
+        @page.path.should == '/new-page2'
+
+        @rnd.should redirect_paragraph("#{root_page.node_path}#{@page.path}")
+      end
+
+      it 'should create a page' do
+        @rnd = generate_page_renderer('wiki_editor', {:root_page_id => root_page.id, :allow_create => true, :allow_auto_version => true, :book_id => @book.id})
+        assert_difference 'BookPageVersion.count', 1 do
+          assert_difference 'BookPage.count', 1 do
+            renderer_post @rnd, :commit => 'Submit', :page => {:name => 'My New Page', :body => 'My New Body'}
+          end
+        end
+
+        @page = BookPage.last
+        @version = @page.book_page_versions.last
+        @version.version_status.should == 'accepted wiki'
+        @version.version_type.should == 'wiki_auto_publish'
+        @page.name.should == 'My New Page'
+        @page.body.should == 'My New Body'
+        @page.published.should be_true
+
+        @rnd.should redirect_paragraph("#{root_page.node_path}#{@page.path}")
+      end
+
+      it 'should create a page' do
+        mock_user
+
+        @rnd = generate_page_renderer('wiki_editor', {:root_page_id => root_page.id, :allow_create => true, :allow_auto_version => true, :book_id => @book.id})
+        assert_difference 'BookPageVersion.count', 1 do
+          assert_difference 'BookPage.count', 1 do
+            renderer_post @rnd, :commit => 'Submit', :page => {:name => 'My New Page', :body => 'My New Body'}
+          end
+        end
+
+        @page = BookPage.last
+        @version = @page.book_page_versions.last
+        @version.version_status.should == 'accepted wiki'
+        @version.version_type.should == 'wiki_auto_publish'
+        @version.created_by_id.should == @myself.id
+        @page.name.should == 'My New Page'
+        @page.body.should == 'My New Body'
+        @page.published.should be_true
+        @page.created_by_id.should == @myself.id
+        @page.updated_by_id.should == @myself.id
+
+        @rnd.should redirect_paragraph("#{root_page.node_path}#{@page.path}")
+      end
+
+      it 'should edit a page' do
+        @rnd = generate_page_renderer('wiki_editor', {:root_page_id => root_page.id, :book_id => @book.id}, {:flat_chapter => [:chapter_id, @page2.url]})
+        assert_difference 'BookPageVersion.count', 1 do
+          assert_difference 'BookPage.count', 0 do
+            renderer_post @rnd, :commit => 'Submit', :page => {:name => 'My New Page', :body => 'My New Body'}
+          end
+        end
+
+        @page = BookPage.find @page2.id
+        @version = @page.book_page_versions.last
+        @version.version_status.should == 'submitted'
+        @version.version_type.should == 'wiki'
+        @version.name.should_not == 'My New Page'
+        @version.body.should == 'My New Body'
+        @page.name.should_not == 'My New Page'
+        @page.body.should_not == 'My New Body'
+        @page.published.should be_true
+
+        @rnd.should redirect_paragraph("#{root_page.node_path}#{@page.path}")
+      end
+
+      it 'should edit a page' do
+        @rnd = generate_page_renderer('wiki_editor', {:root_page_id => root_page.id, :allow_auto_version => true, :book_id => @book.id}, {:flat_chapter => [:chapter_id, @page2.url]})
+        assert_difference 'BookPageVersion.count', 1 do
+          assert_difference 'BookPage.count', 0 do
+            renderer_post @rnd, :commit => 'Submit', :page => {:name => 'My New Page', :body => 'My New Body'}
+          end
+        end
+
+        @page = BookPage.find @page2.id
+        @version = @page.book_page_versions.last
+        @version.version_status.should == 'accepted wiki'
+        @version.version_type.should == 'wiki_auto_publish'
+        @version.name.should_not == 'My New Page'
+        @version.body.should == 'My New Body'
+        @page.name.should_not == 'My New Page'
+        @page.body.should == 'My New Body'
+        @page.published.should be_true
+
+        @rnd.should redirect_paragraph("#{root_page.node_path}#{@page.path}")
+      end
+    end
   end
 end

@@ -20,8 +20,9 @@ class BookPage < DomainModel
     }
   end
 
-  attr_accessor :edit_type, :editor, :remote_ip, :v_status, :created_by_id, :prev_version
+  attr_accessor :edit_type, :editor, :remote_ip, :v_status, :prev_version
 
+  after_create :create_id_url
   before_save :create_url
   after_move :path_update
   after_save :force_resave_children
@@ -125,7 +126,7 @@ class BookPage < DomainModel
 
     max_lines = 99999999 
     diff_header_length = 3
-    page_body_old = self.body.gsub(/\r\n/,"\n").gsub(/(\n| )/,"\\1\n")
+    page_body_old = (self.body || '').gsub(/\r\n/,"\n").gsub(/(\n| )/,"\\1\n")
 
     if version_body.blank?
       page_body_new = ""
@@ -253,23 +254,26 @@ class BookPage < DomainModel
 
   protected
 
+  def create_id_url
+    return unless self.book_book.id_url?
+    self.update_attributes :url => self.id.to_s, :path => "/#{self.id}"
+  end
+
   def create_url
-    if self.book_book.id_url?
-      self.url = self.id.to_s
-    else
-      name_base = SiteNode.generate_node_path(self.name)
+    return if self.book_book.id_url?
 
-      if name_base != self.url
-        cnt = 1
-        name_try = name_base
+    name_base = (self.id.nil? || self.published) ? (self.url || SiteNode.generate_node_path(self.name)) : SiteNode.generate_node_path(self.name)
 
-        while check_duplicate(name_try)
-          name_try = name_base + '-' + cnt.to_s
-          cnt += 1
-        end
+    if name_base != self.url || self.id.nil?
+      cnt = 1
+      name_try = name_base
 
-        self.url = name_try
+      while check_duplicate(name_try)
+        name_try = name_base + '-' + cnt.to_s
+        cnt += 1
       end
+
+      self.url = name_try
     end
 
     self.path_update(true)

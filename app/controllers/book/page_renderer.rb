@@ -15,6 +15,8 @@ class Book::PageRenderer < ParagraphRenderer
   
   def chapters
     @options = paragraph_options(:chapters)
+    return render_paragraph :text => 'Please configure paragraph' unless @options.root_page_url
+
     @book = self.find_book
     return render_paragraph :text => 'No book found' unless @book
     return render_paragraph :text => 'Unsupported book url scheme...' if @book.nested_url?
@@ -41,7 +43,7 @@ class Book::PageRenderer < ParagraphRenderer
     return render_paragraph :text => 'Unsupported book url scheme...' if @book.nested_url?
 
     @page = self.find_page
-    unless @options.enable_wiki
+    unless @options.wiki?
       return render_paragraph :text => 'No page found' if @page.nil? && editor?
       raise SiteNodeEngine::MissingPageException.new( site_node, language ) unless @page && @page.published?
     end
@@ -72,6 +74,8 @@ class Book::PageRenderer < ParagraphRenderer
 
   def wiki_editor
     @options = paragraph_options(:wiki_editor)
+    return render_paragraph :text => 'Please configure paragraph' unless @options.root_page_url
+
     @book = self.find_book
     return render_paragraph :text => 'No book found' unless @book
     return render_paragraph :text => 'Unsupported book url scheme...' if @book.nested_url?
@@ -139,9 +143,11 @@ class Book::PageRenderer < ParagraphRenderer
       @page.body = params[:page][:body]
       @page.remote_ip = request.remote_ip
       @page.editor = myself.id
-      @page.edit_type = @options.auto_save_version ? 'wiki_auto_publish' : 'wiki'
-      @page.v_status = @options.auto_save_version ? 'accepted wiki' : 'submitted'
-      @page.published = @options.auto_save_version ? true : false
+      @page.created_by_id = myself.id if @newpage
+      @page.updated_by_id = myself.id
+      @page.edit_type = @options.allow_auto_version ? 'wiki_auto_publish' : 'wiki'
+      @page.v_status = @options.allow_auto_version ? 'accepted wiki' : 'submitted'
+      @page.published = @options.allow_auto_version ? true : false
 
       return false unless @page.save
 
@@ -154,7 +160,7 @@ class Book::PageRenderer < ParagraphRenderer
 
   def find_book
     # using page connections
-    if @options.book_id.blank?
+    if @options.book_id.blank? || @options.book_id == 0
       if editor?
         @book = BookBook.first
       else
@@ -181,11 +187,9 @@ class Book::PageRenderer < ParagraphRenderer
     if conn_id.blank?
       @page = @book.book_pages.find_by_reference(params[:ref]) if params[:ref]
       @page ||= @book.first_page if @options.show_first_page
-    elsif @book.flat_url?
-      @page = @book.book_pages.find_by_url conn_id
+    else
+      @page = @book.book_pages.find_by_path "/#{conn_id}"
       @missing_page_url = conn_id unless @page
-    elsif @book.id_url?
-      @page = @book.book_pages.find_by_id conn_id
     end
 
     @page = nil if @page && ! @page.published?

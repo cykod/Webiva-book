@@ -30,8 +30,6 @@ module BookHelper
     if page
       if page.is_a?(String)
         url += "/#{page}"
-      elsif book.id_url?
-        url += "/#{page.id}"
       else
         url += page.path
       end
@@ -42,11 +40,7 @@ module BookHelper
   def content_url(options, book, page)
     url = options.root_page_url
     url += "/#{book.id}" if options.book_id.blank? # using page connections
-    if book.id_url?
-      url += "/#{page.id}"
-    else
-      url += page.path
-    end
+    url += page.path
     url
   end
 end

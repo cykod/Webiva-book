@@ -37,7 +37,6 @@ class Book::ManageController < ModuleController
     end
 
     if request.post? && params[:book]
-
       if params[:commit]
         unless @book.id
           @book.url_scheme = params[:book][:url_scheme]
@@ -66,7 +65,7 @@ class Book::ManageController < ModuleController
     @chapters = @book.nested_pages
     
     if @chapters.length == 0 && @book.chapter_book?
-      @page = @book.book_pages.create(:name => 'Default Page',:created_by_id => myself.id)
+      @page = @book.book_pages.create(:name => 'Default Page', :created_by_id => myself.id, :updated_by_id => myself.id)
       @page.move_to_child_of(@book.root_node)
       @book.reload
       @chapters = @book.nested_pages
@@ -84,7 +83,6 @@ class Book::ManageController < ModuleController
     
     active_tree_move(params[:chapter_tree]) do |page_id,move_page_id|
       [ @book.book_pages.find(page_id), move_page_id ?  @book.book_pages.find(move_page_id) : @book.root_node ]
-      
     end
     
     render :nothing => true
@@ -95,20 +93,19 @@ class Book::ManageController < ModuleController
 
     @parent_page = @book.book_pages.find(params[:page_id])
 
-    @page = @book.book_pages.create(:name => 'New Page', :created_by_id => myself.id)
+    @page = @book.book_pages.create(:name => 'New Page', :created_by_id => myself.id, :updated_by_id => myself.id)
 
     case params[:position]
-    when 'top':
-        @page.move_to_left_of(@parent_page)
-    when 'bottom':
-        @page.move_to_right_of(@parent_page)
+    when 'top'
+      @page.move_to_left_of(@parent_page)
+    when 'bottom'
+      @page.move_to_right_of(@parent_page)
     else
       @page.move_to_child_of(@parent_page)
     end
 
     @book.reload
     @chapters = @book.nested_pages
-
   end
 
   def page
@@ -127,43 +124,35 @@ class Book::ManageController < ModuleController
 
   def save_page
     @book =  BookBook.find(params[:path][0])
-    @page = @book.book_pages.find_by_id(params[:page_id]) || @book.book_pages.build(:name => params[:page][:name])
+    @page = @book.book_pages.find_by_id(params[:page_id]) || @book.book_pages.build(:created_by_id => myself.id)
     @page.updated_by_id = myself.id
-    @new_page = true unless @page.id
-    @page.name = params[:page][:name]
+    @new_page = @page.id.nil?
 
+    @page.name = params[:page][:name]
     @page.body = params[:page][:body]
     @page.editor = myself
+    @page.updated_by_id = myself.id
     @page.edit_type = nil
     @page.v_status = "auto"
-    @page.remote_ip = @ipaddress
-    if @page.book_page_versions.latest_revision.empty?
-      @page.prev_version = nil
-    else 
-      @page.prev_version = @page.book_page_versions.latest_revision[0].id
-    end
+    @page.remote_ip = request.remote_ip
 
     @updated = @page.save
     @chapters = @book.nested_pages
     
-    if !params[:draft_id].blank?    
-      @version = @page.book_page_versions.find_by_id(params[:draft_id])  
-      @version.delete
-    end
-    
-    @save_error = params[:save_error]
+    @version = @page.book_page_versions.find_by_id(params[:draft_id]) unless params[:draft_id].blank?
+    @version.delete if @version
   end
 
   def save_draft
     @book = BookBook.find(params[:path][0])
     
     @page = @book.book_pages.find(params[:page_id])
-    if !params[:version_id].blank?
+
+    if ! params[:version_id].blank?
       @version = @page.book_page_versions.find_by_id(params[:version_id])  
       @version.update_attributes(:body => params[:page][:body]) if @version
     else
-      @prev_version =  @page.book_page_versions.latest_revision || nil
-      @version = @page.save_version(myself, params[:page][:body], 'page', 'draft', @ipaddress,@prev_version[0].id)      
+      @version = @page.save_version(myself, params[:page][:body], 'page', 'draft', request.remote_ip)
     end
   end
 
@@ -233,13 +222,8 @@ class Book::ManageController < ModuleController
     @wiki_body = @page.page_diff(@vers_body.body)
     @escaped_body = pre_escape @wiki_body
     @diff_body = output_diff_pretty(@escaped_body)
-    @review_button = false unless @vers_body.version_status == 'submitted'
 
-    if  @vers_body.body == "1" && @wiki_body == nil
-      @diff = ""
-    end
-    
-    render :action => 'view_edits', :layout => "manage_window", :path => @book.id 
+    render :action => 'view_edits', :layout => "manage_window"
   end
  
   def review_wiki_edits
@@ -255,7 +239,7 @@ class Book::ManageController < ModuleController
     @page = @book.book_pages.find(@version.book_page_id)
     
     @page.edit_type = "admin editor"
-    @page.editor = myself
+    @page.editor = myself.id
     @page.body = @version.body
     @page.v_status = "accepted wiki"
     @page.save
@@ -263,7 +247,6 @@ class Book::ManageController < ModuleController
     @version.update_attribute(:version_status, "reviewed")
 
     render :nothing => true
-
   end
 
   def add_subpages_form
@@ -272,20 +255,18 @@ class Book::ManageController < ModuleController
     if params[:page_ids]
       @pages = @book.book_pages.find(params[:page_ids])
       render :partial => 'add_subpages_form'
-      
     else 
       @new_pages = params[:new_page][:page_names]
       @new_pages.each do |subs|  
         @parent = @book.book_pages.find(subs[0])
+
         subs[1].split("\n").map(&:strip).reject(&:blank?).each do |sub|
           @new_page = @book.book_pages.create(:name => sub)
-          
           @new_page.move_to_child_of(@parent)
-         
         end    
       end
-      @tbl = bulkview_table_generate( params,
-                                 :conditions => ['book_book_id = ? and name != ?',@book.id,'Root'])
+
+      @tbl = bulkview_table_generate(params, :conditions => ['book_book_id = ? and name != ?',@book.id,'Root'])
     end
   end
 
@@ -301,9 +282,7 @@ class Book::ManageController < ModuleController
     else 
       @page = @book.book_pages.find(params[:page_id])
       render :partial => 'edit_meta_form'
-      
     end
-    
   end
 
   active_table :bulkview_table,
@@ -319,11 +298,11 @@ class Book::ManageController < ModuleController
   def bulk_edit
     @book = BookBook.find(params[:path][0])
     cms_page_path ['Content', [@book.name, url_for(:action => 'edit', :path => @book.id)]], 'Bulk Edit'
-    display_bulkview_table(display)
+    display_bulkview_table(false)
   end
 
   def display_bulkview_table(display=true)
-    @book = BookBook.find(params[:path][0])
+    @book ||= BookBook.find(params[:path][0])
     
     active_table_action('bulkview') do |act,pids|
       case act
@@ -333,17 +312,14 @@ class Book::ManageController < ModuleController
       end 
     end  
     
-    @tbl = bulkview_table_generate( params, :order => 'lft',:conditions => ['book_book_id = ? and name != ?',@book.id,'Root'])
+    @tbl = bulkview_table_generate(params, :order => 'lft', :conditions => ['book_book_id = ? and name != ?',@book.id,'Root'])
     render :partial => 'bulkview_table' if display
-    
   end
   
   protected
 
   def active_tree_move(pages)
-    
     params[:chapter_tree].each do |page_id,args|
-
       if !args[:left_id].blank?
         page, move_page = yield(page_id,args[:left_id])
         page.move_to_right_of(move_page)
@@ -364,5 +340,4 @@ class Book::ManageController < ModuleController
       end
     end
   end
-  
 end

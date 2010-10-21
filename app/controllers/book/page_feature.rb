@@ -57,7 +57,7 @@ class Book::PageFeature < ParagraphFeature
       book_details_tags(data, c)
 
       c.expansion_tag('logged_in') { |t| myself.id }
-      c.expansion_tag('wiki_enabled') { |t| data[:options].enable_wiki && data[:options].edit_page_id }
+      c.expansion_tag('wiki_enabled') { |t| data[:options].wiki? }
       c.link_tag('create'){ |t| edit_url(data[:options], data[:book], data[:missing_page_url]) }
       c.link_tag('page:edit') { |t| edit_url(data[:options], data[:book], data[:page]) }
       
