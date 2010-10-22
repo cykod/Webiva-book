@@ -12,8 +12,12 @@
 
 <% if @page.id -%>
 <script>
+<% if @page -%>
 AutoSave.setup(<%= @page.id %>);
 $('page_body').onkeyup = function() { AutoSave.change(); };
 $('page_body').onchange = function() { AutoSave.change(); };
+<% else -%>
+AutoSave.setup(null);
+<% end -%>
 </script>
 <% end -%>
