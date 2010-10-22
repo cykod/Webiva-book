@@ -54,10 +54,6 @@ class BookPage < DomainModel
     @child_cache << val
   end
 
-  def parent_url
-    self.parent ? self.parent.url : nil
-  end
-
   def parent_page
     ((self.parent && self.parent.parent_id) ? self.parent : nil)
   end
@@ -67,23 +63,19 @@ class BookPage < DomainModel
     @next_page == :none ? nil : @next_page
   end
   
-  def forward_page
-    @forward_page ||= BookPage.find(:first,:conditions => ['book_book_id=? AND lft > ?',self.book_book_id,self.lft ], :order => 'lft') || :none
-
-    @forward_page == :none ? nil : @forward_page
+  def previous_page
+    @previous_page ||= BookPage.first(:conditions => ['parent_id = ? AND lft < ?', self.parent_id, self.lft], :order => 'lft DESC') || :none
+    @previous_page == :none ? nil : @previous_page
   end
 
-  def previous_page
-    @previous_page ||= BookPage.find(:first,:conditions => ['parent_id = ? AND lft < ?',self.parent_id,self.lft ],:order => 'lft DESC') || :none
-    @previous_page == :none ? nil : @previous_page
+  def forward_page
+    @forward_page ||= BookPage.first(:conditions => ['book_book_id = ? AND lft > ?', self.book_book_id, self.lft], :order => 'lft') || :none
+    @forward_page == :none ? nil : @forward_page
   end
 
   # Go to previous page or up
   def back_page
-    @back_page ||=  BookPage.find(:first,:conditions => ['book_book_id=? AND lft < ?',self.book_book_id,self.lft ],:order => 'lft DESC')
-    if @back_page != :none
-      @back_page = :none if  !@back_page ||  !@back_page.parent_id
-    end
+    @back_page ||=  BookPage.first(:conditions => ['book_book_id = ? AND lft < ? AND parent_id IS NOT NULL', self.book_book_id, self.lft], :order => 'lft DESC') || :none
     @back_page == :none ? nil : @back_page
   end
 
@@ -242,16 +234,6 @@ class BookPage < DomainModel
     page
   end
 
-  def edit_page_url(base_edit_url)
-    return nil unless base_edit_url
-    case self.book_book.url_scheme
-    when 'id'
-      "#{base_edit_url}/#{self.book_book.id}/#{self.id}"
-    else
-      "#{base_edit_url}/#{self.book_book.id}#{self.path}"
-    end
-  end
-
   protected
 
   def create_id_url
@@ -262,9 +244,9 @@ class BookPage < DomainModel
   def create_url
     return if self.book_book.id_url?
 
-    name_base = (self.id.nil? || self.published) ? (self.url || SiteNode.generate_node_path(self.name)) : SiteNode.generate_node_path(self.name)
+    name_base = (self.id.nil? || self.url_changed? || (self.published && ! self.published_changed?)) ? (self.url || SiteNode.generate_node_path(self.name)) : SiteNode.generate_node_path(self.name)
 
-    if name_base != self.url || self.id.nil?
+    if name_base != self.url || self.id.nil? || self.url_changed?
       cnt = 1
       name_try = name_base
 

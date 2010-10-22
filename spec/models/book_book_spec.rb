@@ -87,8 +87,11 @@ describe BookBook do
       @df = DomainFile.create(:filename => book_fixture_file_upload("files/book-import.csv"))
     end
 
-    it 'should parse an insert row of csv' do
-      assert_difference 'BookPage.count', 6 do
+    it 'should parse an insert/update rows of csv' do
+
+      @book.book_pages.create(:name => 'duck', :body => 'duck of many')
+
+      assert_difference 'BookPage.count', 5 do
         @book.import_book(@df.filename,@myself)
       end
 
@@ -97,6 +100,7 @@ describe BookBook do
       @duck = @book.book_pages.find_by_name('duck')
       @duck1 = @book.book_pages.find_by_name('duck1')
       @duck1.parent_id.should == @duck.id
+      @duck.body.should == 'of'
     end
   end
 end
