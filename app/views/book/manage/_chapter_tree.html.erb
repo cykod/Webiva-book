@@ -14,7 +14,6 @@ ChapterTree = {
 
   select: function(element_id,element) {
     if (ChapterTree.confirmExit()) {
-      AutoSave.draftHandler(0,0);  
       $('tree_content').show();
       $('search_content').hide();
 
@@ -24,7 +23,7 @@ ChapterTree = {
   },
 
   confirmExit: function() {
-    if (AutoSave.pageChanged()) {
+    if (AutoSave.changed()) {
       var cont = confirm('Make sure you have saved changes. Really want to edit a new page?');
       return cont;
     }
@@ -38,8 +37,6 @@ ChapterTree = {
 
   add: function(drag_id,drop_id,position) {
     if (ChapterTree.confirmExit()) {
-      AutoSave.draftHandler(0,0);  
-
       var params = $H({ page_id:drop_id, act:drag_id, position:position });
       new Ajax.Request(ChapterTree.addToTreeUrl, {parameters: params});
      }
@@ -77,7 +74,6 @@ ChapterTree = {
       if(page_id) {
         ChapterTree.editPage(page_id);
       }
-      AutoSave.draftHandler(0, null); 
     }
   },
 
@@ -111,12 +107,12 @@ ChapterTree = {
       params += "&save_error=1";
     }
 
-    if (AutoSave.draftid) {
-      params += "&draft_id=" + AutoSave.draftid;
+    if (AutoSave.draft_id) {
+      params += "&draft_id=" + AutoSave.draft_id;
     }
 
+    AutoSave.clearHandler();
     new Ajax.Request(ChapterTree.savePageUrl, { parameters: params, evalScripts: true });
-    AutoSave.draftHandler(0,page_id); 
   },
 
   previewPage: function(page_id) {
@@ -152,33 +148,42 @@ var version_id;
                             
 AutoSave = {
   draft_timer_id: null,
-  draftid: null,
+  draft_id: null,
+  page_id: null,
   saveDraftUrl: "<%= url_for :action => 'save_draft', :path => book.id %>",
+  frequency: 10 * 1000,
 
-  draftHandler: function(changed,page_id) {
-    if (changed == 1 && !AutoSave.draft_timer_id ) {
-      this_page = page_id;
-      AutoSave.draft_timer_id = setInterval("AutoSave.setDraft(this_page)",60000); 
-    } else if (changed == 0) {
-      clearInterval( AutoSave.draft_timer_id );
-      AutoSave.resetDraftId();
+  change: function() {
+    AutoSave.clearHandler();
+    AutoSave.draft_timer_id = setInterval("AutoSave.save();", AutoSave.frequency);
+  },
+
+  changed: function() {
+    return AutoSave.draft_id != null || AutoSave.draft_timer_id != null;
+  },
+
+  clearHandler: function() {
+    if(AutoSave.draft_timer_id) {
+      clearInterval(AutoSave.draft_timer_id);
       AutoSave.draft_timer_id = null;
     }
   },
 
-  pageChanged: function() {
-    return AutoSave.draft_timer_id != null;
+  setup: function(page_id) {
+    AutoSave.clearHandler();
+    AutoSave.draft_id = null;
+    AutoSave.page_id = page_id;
   },
 
-  setDraft: function(page_id) {
+  save: function() {
+    if(AutoSave.page_id == null) { return; }
+
+    AutoSave.clearHandler();
+
     var params = Form.serialize('page_form');
-    params += "&page_id=" + page_id;
-    if (AutoSave.draftid) { params += "&version_id=" + AutoSave.draftid; };
-    new Ajax.Request(AutoSave.saveDraftUrl, { parameters: params,  evalScripts: true });
-  },
-
-  resetDraftId: function() {
-    AutoSave.draftid=null;
+    params += "&page_id=" + AutoSave.page_id;
+    if (AutoSave.draft_id) { params += "&version_id=" + AutoSave.draft_id; };
+    new Ajax.Request(AutoSave.saveDraftUrl, {parameters: params,  evalScripts: true});
   }
 }
 

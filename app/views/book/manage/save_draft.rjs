@@ -1,2 +1,2 @@
-page << "AutoSave.draftid = #{@version.id}"
+page << "AutoSave.draft_id = #{@version.id};"
 page.replace_html :save_notice, DateTime.now.strftime("Draft Saved  %A, %I:%M:%S%p") 

@@ -17,7 +17,8 @@ if @updated
   if @save_error
     page.replace_html :edit_page_form, :partial => 'page_edit_form'
   end
- 
+
+  page << "AutoSave.draft_id = null;"
 else
  page.replace_html :edit_page_form, :partial => 'page_edit_form'
 

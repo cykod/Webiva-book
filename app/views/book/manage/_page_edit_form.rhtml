@@ -12,8 +12,8 @@
 
 <% if @page.id -%>
 <script>
-ChapterTree.saveError = <%= @page.errors.length > 0 ? 'true' : 'false' %>;
-$('page_body').onkeyup=function() { AutoSave.draftHandler(1,<%= @page.id %>); }
-$('page_body').onchange=function() { AutoSave.draftHandler(1,<%= @page.id %>); }
+AutoSave.setup(<%= @page.id %>);
+$('page_body').onkeyup = function() { AutoSave.change(); };
+$('page_body').onchange = function() { AutoSave.change(); };
 </script>
 <% end -%>
