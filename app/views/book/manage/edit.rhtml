@@ -14,6 +14,7 @@
     <a href="javascript:void(0);" id="export_book"><%= theme_image_tag('icons/actions/download.gif') %> Export Book</a>
     <span id="export_book_status"></span>
   <% end %>
+  <%= p.link 'Submitted Edits',:action => 'edits',:path => [ @book.id ], :icon => 'show.gif' %>
   <%= p.link 'Delete Book', :action => 'delete', :path => [ @book.id ], :icon => 'delete.gif' %>
 <% end -%>
 

@@ -1,0 +1,17 @@
+<script>
+
+UserEdits = {
+  displayVersionTableUrl: "<%= url_for :action => 'display_edits_table', :path => @book.id %>",
+
+  loadVersionTable: function() {
+    new Ajax.Updater('edits_table', UserEdits.displayVersionTableUrl);
+  }
+};
+
+</script>
+
+<div class='admin_content'>
+<div id='edits_table'>
+  <%= render :partial => 'edits_table' %>
+</div>
+</div>

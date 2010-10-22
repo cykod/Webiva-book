@@ -1,5 +1,7 @@
-
-<% active_table_for :version_table, @tbl, :refresh_url => url_for(:action => 'display_version_table', :path => @book.id, :page_id => @page.id), 
+<%
+page_id = @page ? @page.id : nil
+-%>
+<% active_table_for :version_table, @tbl, :refresh_url => url_for(:action => 'display_version_table', :path => @book.id, :page_id => page_id), 
 :actions => [ ['Reviewed','reviewed','Are you sure you want to mark these submissions as reviewed?'], ['Delete','delete','Are you sure you want to delete these edits?'] ] do |t| -%>
 
    <% active_tr 'version', t.id do |tr| %>

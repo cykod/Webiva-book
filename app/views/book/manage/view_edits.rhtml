@@ -46,6 +46,8 @@ RevisionDiff = {
                          if(window.opener.ChapterTree) {
                            window.opener.SCMS.select_tab_num(3);
                            window.opener.ChapterTree.loadVersionTable(<%= @page.id %>);
+                         } else if(window.opener.UserEdits) {
+                           window.opener.UserEdits.loadVersionTable();
                          }
                          window.close();
                        }
@@ -60,6 +62,8 @@ RevisionDiff = {
                          if(window.opener.ChapterTree) {
                            window.opener.SCMS.select_tab_num(3);
                            window.opener.ChapterTree.loadVersionTable(<%= @page.id %>);
+                         } else if(window.opener.UserEdits) {
+                           window.opener.UserEdits.loadVersionTable();
                          }
                          window.close();
                        }

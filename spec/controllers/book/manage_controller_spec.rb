@@ -284,7 +284,7 @@ describe Book::ManageController do
       BookBook.find_by_id(@cb.id).should be_nil
     end
 
-    it "should handle version table list" do 
+    it "should handle version table list" do
       controller.should handle_active_table(:version_table) do |args|
         args ||= {}
         args[:path] = [@cb.id]
@@ -304,6 +304,35 @@ describe Book::ManageController do
     it "should be able to review a version" do
       @version = @page4.save_version(@myself.id, 'my new draft version', 'wiki', 'submitted', nil)
       post 'display_version_table', :path => [@cb.id], :page_id => @page4.id, :version => {@version.id => @version.id}, :table_action => 'reviewed'
+      @version.reload
+      @version.version_status.should == 'reviewed'
+    end
+
+    it "should render edits page" do
+      @version = @page4.save_version(@myself.id, 'my new draft version', 'wiki', 'submitted', nil)
+      get 'edits', :path => [@cb.id]
+    end
+
+    it "should handle edits table list" do
+      @version = @page4.save_version(@myself.id, 'my new draft version', 'wiki', 'submitted', nil)
+      controller.should handle_active_table(:edits_table) do |args|
+        args ||= {}
+        args[:path] = [@cb.id]
+        post 'display_edits_table', args
+      end
+    end
+
+    it "should be able to delete a version" do
+      @version = @page4.save_version(@myself.id, 'my new draft version', 'wiki', 'submitted', nil)
+      assert_difference 'BookPageVersion.count', -1 do
+        post 'display_edits_table', :path => [@cb.id], :page_id => @page4.id, :version => {@version.id => @version.id}, :table_action => 'delete'
+      end
+      BookPageVersion.find_by_id(@version.id).should be_nil
+    end
+
+    it "should be able to review a version" do
+      @version = @page4.save_version(@myself.id, 'my new draft version', 'wiki', 'submitted', nil)
+      post 'display_edits_table', :path => [@cb.id], :page_id => @page4.id, :version => {@version.id => @version.id}, :table_action => 'reviewed'
       @version.reload
       @version.version_status.should == 'reviewed'
     end

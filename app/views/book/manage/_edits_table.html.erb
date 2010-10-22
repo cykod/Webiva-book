@@ -1,0 +1,15 @@
+<% active_table_for :edits_table, @tbl,
+  :refresh_url => url_for(:action => 'display_edits_table', :path => @book.id), 
+  :actions => [ ['Reviewed','reviewed','Are you sure you want to mark these submissions as reviewed?'],
+                ['Delete','delete','Are you sure you want to delete these edits?'] ] do |t| -%>
+  <% active_tr 'version', t.id do |tr| %>
+    <td><%= tr.checkbox %></td>
+    <td><%= h t.book_page.name %></td>
+    <td><%= h t.created_by ? t.created_by.name : t.ipaddress %></td>
+    <td><%= h t.version_status %></td>
+    <td><%= h t.version_type %></td>
+    <td><%= link_to( h(t.created_at.to_s:short),  { :path => [ @book.id ], :version_id => t.id, :action => "view_wiki_edits" }, :popup => ['Revision Diff', 'height=680,width=880,scrollbars=yes'] )%></td>
+  <% end -%>
+<% end -%>
+
+ 

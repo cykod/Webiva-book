@@ -113,8 +113,6 @@ class Book::ManageController < ModuleController
 
     @page = @book.book_pages.find_by_id(params[:page_id]) || @book.book_pages.new(:created_by_id => myself.id)
 
-    display_version_table false
-
     if @page.id
       render :partial => 'page'
     else
@@ -197,8 +195,8 @@ class Book::ManageController < ModuleController
   end
 
   def display_version_table(display=true)
-    @book ||= BookBook.find(params[:path][0])
-    @page ||= @book.book_pages.find_by_id(params[:page_id]) || @book.book_pages.build
+    @book ||= BookBook.find params[:path][0]
+    @page ||= @book.book_pages.find_by_id(params[:page_id]) if params[:page_id]
     
     active_table_action('version') do |act,pids|
       case act
@@ -206,14 +204,51 @@ class Book::ManageController < ModuleController
       when 'reviewed': BookPageVersion.find(pids).each { |uv|  uv.update_attribute(:version_status, 'reviewed' ) }
       end 
     end  
-    
+
+    conditions = @page ? ['book_page_id = ?', @page.id] : ['book_book_id = ? AND version_status = "submitted"', @book.id]
+
     @tbl = version_table_generate( params,
                                    :order => 'created_at DESC',
-                                   :conditions => ['book_page_id = ?',@page.id])
+                                   :conditions => conditions)
 
     render :partial => 'version_table' if display
   end
+
+  active_table :edits_table,
+               BookPageVersion, 
+               [ :check,
+                 hdr(:static, 'Name'),
+                 :created_by_id,
+                 hdr(:string, :version_status, :label => 'Status'),
+                 hdr(:string, :version_type, :label => 'Type'),
+                 :created_at
+               ]
   
+  def display_edits_table(display=true)
+    @book ||= BookBook.find params[:path][0]
+    
+    active_table_action('version') do |act,pids|
+      case act
+      when 'delete': BookPageVersion.destroy(pids)
+      when 'reviewed': BookPageVersion.find(pids).each { |uv|  uv.update_attribute(:version_status, 'reviewed' ) }
+      end 
+    end  
+
+    conditions = ['book_book_id = ? AND version_status = "submitted"', @book.id]
+
+    @tbl = edits_table_generate( params,
+                                 :order => 'created_at DESC',
+                                 :conditions => conditions)
+
+    render :partial => 'edits_table' if display
+  end
+
+  def edits
+    @book =  BookBook.find params[:path][0]
+    cms_page_path ['Content', [@book.name, url_for(:action => 'edit', :path => @book.id)]], 'Submitted User Edits'
+    display_edits_table false
+  end
+
   def view_wiki_edits
     @book = BookBook.find(params[:path][0])
     @vers_body = BookPageVersion.find(params[:version_id]) 
