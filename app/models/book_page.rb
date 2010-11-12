@@ -244,7 +244,9 @@ class BookPage < DomainModel
   def create_url
     return if self.book_book.id_url?
 
-    name_base = (self.id.nil? || self.url_changed? || (self.published && ! self.published_changed?)) ? (self.url || SiteNode.generate_node_path(self.name)) : SiteNode.generate_node_path(self.name)
+    return if self.name.downcase == 'new page'
+
+    name_base = self.url.blank? ? SiteNode.generate_node_path(self.name) : self.url
 
     if name_base != self.url || self.id.nil? || self.url_changed?
       cnt = 1

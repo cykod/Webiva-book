@@ -43,7 +43,9 @@ class Book::PageRenderer < ParagraphRenderer
     return render_paragraph :text => 'Unsupported book url scheme...' if @book.nested_url?
 
     @page = self.find_page
-    unless @options.wiki?
+    if @options.wiki?
+      raise SiteNodeEngine::MissingPageException.new( site_node, language ) if @page && ! @page.published?
+    else
       return render_paragraph :text => 'No page found' if @page.nil? && editor?
       raise SiteNodeEngine::MissingPageException.new( site_node, language ) unless @page && @page.published?
     end

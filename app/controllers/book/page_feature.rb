@@ -97,6 +97,7 @@ class Book::PageFeature < ParagraphFeature
         c.field_tag('form:name', :field => 'name')
         c.field_tag('form:body', :field => 'body',  :control => 'text_area')
         c.button_tag('form:submit', :name => 'commit', :value => 'Submit') 
+        c.button_tag('form:reset', :name => 'reset', :value => 'Reset', :control => 'reset') 
     end
   end
 
@@ -110,6 +111,8 @@ class Book::PageFeature < ParagraphFeature
   def page_details_tags(data, c)
     c.h_tag('page:title') { |t| t.locals.page.name }
     c.value_tag('page:body') { |t| t.locals.page.body_html  }
+    c.link_tag("page:return") { |t| content_url(data[:options], data[:book], t.locals.page) }
+    c.link_tag("page:page") { |t| content_url(data[:options], data[:book], t.locals.page) }
     
     %w(back parent next previous forward).each do |dir|
       c.expansion_tag("page:#{dir}") { |t| t.locals.other_page = t.locals.page.send("#{dir}_page") }

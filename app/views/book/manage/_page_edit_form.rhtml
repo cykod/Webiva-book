@@ -2,6 +2,7 @@
  <%= hidden_field_tag 'current_page_id', @page.id, :id => 'current_page_id' -%>
  <%= f.text_field :name, :vertical => true %> 
  <%= f.check_boxes :published, [['Published',true]], :single => true, :label => '', :vertical => true %> 
+ <%= f.text_field :url, :vertical => true, :label => 'Permalink (Leave blank to have one created for you)'.t if @page.id %> 
  <%= f.submit_tag 'Save Page' %> 
  <%= f.text_area :body, :rows => 30, :style => 'width:100%', :vertical => true %> 
  <%= f.text_field :reference, :vertical => true, :description => 'Optional external reference identifier' %>
