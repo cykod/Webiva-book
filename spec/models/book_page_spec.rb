@@ -131,17 +131,17 @@ EOF
     @page6.back_page.should == @page5
   end
 
-  it "should not change the url after it is published" do
+  it "should change the url if it is blank" do
     @book = BookBook.create :name => 'book'
-    @page1 = @book.book_pages.create :name => 'New Page', :published => false
-    @page1.url.should == 'new-page'
-    @page1.path.should == '/new-page'
+    @page1 = @book.book_pages.create :name => 'New Page'
+    @page1.url.should be_nil
+    @page1.path.should be_nil
 
     @page1.update_attribute :name, 'New Page 2'
     @page1.url.should == 'new-page-2'
     @page1.path.should == '/new-page-2'
 
-    @page1.update_attributes :name => 'Page 2', :published => true
+    @page1.update_attributes :name => 'Page 2', :url => ''
     @page1.url.should == 'page-2'
     @page1.path.should == '/page-2'
 
