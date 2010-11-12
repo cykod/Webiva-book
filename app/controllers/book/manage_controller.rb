@@ -127,7 +127,7 @@ class Book::ManageController < ModuleController
     @new_page = @page.id.nil?
 
     @page.attributes = params[:page]
-    @page.editor = myself
+    @page.editor = myself.id
     @page.updated_by_id = myself.id
     @page.edit_type = nil
     @page.v_status = "auto"
