@@ -25,6 +25,7 @@ module BookHelper
   end
 
   def edit_url(options, book, page=nil)
+    return '' unless options.edit_page_url
     url = options.edit_page_url
     url += "/#{book.id}" if options.book_id.blank? # using page connections
     if page
