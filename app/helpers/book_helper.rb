@@ -39,6 +39,7 @@ module BookHelper
   end
 
   def content_url(options, book, page)
+    return '' unless options.root_page_url
     url = options.root_page_url
     url += "/#{book.id}" if options.book_id.blank? # using page connections
     url += page.path
