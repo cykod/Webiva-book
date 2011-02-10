@@ -74,6 +74,7 @@ class Book::ManageController < ModuleController
     cms_page_path ['Content'], 'Edit %s' / @book.name
 
     require_js('scriptaculous-sortabletree/sortable_tree.js')
+    require_js('jquery/fieldselection/jquery-fieldselection.pack.js')
   end
    
   def update_tree
