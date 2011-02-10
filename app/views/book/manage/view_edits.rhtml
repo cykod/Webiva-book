@@ -87,6 +87,11 @@ if(window.opener.ChapterTree) {
 </div>
 
 
+<% if @no_difference -%>
+<div class="flash_notice"><%= 'No differences with current version'.t %></div>
+<br/>
+<% end -%>
+
 <% ajax_tabs ['Version Comparison',['Submitted Text']],'Version Comparison' do |t| -%>
 
 <% t.tab do -%>

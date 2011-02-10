@@ -126,7 +126,8 @@ class BookPage < DomainModel
       page_body_new = version_body.gsub(/\r\n/,"\n").gsub(/(\n| )/,"\\1\n")
     end
     
-
+    return [page_body_new] if page_body_new == page_body_old
+    
     tmp_orig_body = "page_body_old"
     tmp_vers_body = "page_body_new"
 

@@ -254,6 +254,7 @@ class Book::ManageController < ModuleController
     @page = @book.book_pages.find(@vers_body.book_page_id)
 
     @wiki_body = @page.page_diff(@vers_body.body)
+    @no_difference = @wiki_body.size == 1
     @escaped_body = pre_escape @wiki_body
     @diff_body = output_diff_pretty(@escaped_body)
 
