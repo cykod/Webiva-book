@@ -1,17 +1,23 @@
 <script>
-function file_manager_insert_file_into_field_for_markdown(field, file_type, file_id, name, editor_url, thumb_url, name2) {
-  var title = name.replace(/.*\//, '').replace(/\..*$/, '').replace(/[\-_]/g, ' ');
-  $j('#' + field).replaceSelection("![" + title + "](images" + name + ")");
-}
-
 Book = {
-  selectImageUrl: "<%= url_for :controller => '/file', :action => 'popup', :callback => 'file_manager_insert_file_into_field_for_markdown' %>",
+  selectImageUrl: "<%= url_for :controller => '/file', :action => 'popup', :path => @book.image_folder_id, :callback => 'file_manager_insert_file_into_field_for_markdown' %>",
+  baseFolder: "<%= @book.image_folder ? @book.image_folder.file_path : '' %>",
 
   insertImage: function(field, select) {
     select = select || 'img';
     openWindow(Book.selectImageUrl + "&field=" + field + "&select=" + select, "selectFile", 1000, 500, "yes", "yes");
   }
 };
+
+function file_manager_insert_file_into_field_for_markdown(field, file_type, file_id, name, editor_url, thumb_url, name2) {
+  if(name.match('^' + Book.baseFolder) == null) {
+    alert( "Images must be relaitive to the \"" + Book.baseFolder + "\" folder" );
+    return;
+  }
+  var filename = name.replace(Book.baseFolder + '/', '');
+  var title = name.replace(/.*\//, '').replace(/\..*$/, '').replace(/[\-_]/g, ' ');
+  $j('#' + field).replaceSelection("![" + title + "](images/" + filename + ")");
+}
 </script>
 
 <%= render :partial => 'chapter_tree', :locals => {:book => @book} %>

@@ -6,7 +6,8 @@ class BookBook < DomainModel
   has_domain_file :cover_file_id
   has_domain_file :thumb_file_id
   belongs_to :created_by, :class_name => 'EndUser', :foreign_key => :created_by_id
-
+  belongs_to :image_folder, :class_name => 'DomainFile', :foreign_key => :image_folder_id
+  
   has_many :book_page_versions, :order => 'book_page_versions.name'
   has_many :book_pages, :dependent => :destroy, :order => 'book_pages.name'
 

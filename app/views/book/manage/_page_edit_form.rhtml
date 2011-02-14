@@ -4,9 +4,9 @@
  <%= f.check_boxes :published, [['Published',true]], :single => true, :label => '', :vertical => true %> 
  <%= f.text_field :url, :vertical => true, :label => 'Permalink (Leave blank to have one created for you)'.t if @page.id %> 
  <%= f.submit_tag 'Save Page' %>
- <% if @book.content_filter.include?('markdown') -%>
+ <% if @book.content_filter.include?('markdown') && @book.image_folder -%>
    <% f.custom_field 'Body', :vertical => true do -%>
-     <a href="javascript:void(0);" onclick="javascript:Book.insertImage('page_body');">insert image</a>
+     <a href="javascript:void(0);" onclick="javascript:Book.insertImage('page_body');"><%= 'insert image'.t %></a>
      <br/>
      <%= text_area :page, :body, :rows => 30, :style => 'width:100%' %>
    <% end -%>
