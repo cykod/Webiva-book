@@ -38,6 +38,7 @@ function file_manager_insert_file_into_field_for_markdown(field, file_type, file
   <% end %>
   <%= p.link 'Submitted Edits',:action => 'edits',:path => [ @book.id ], :icon => 'show.gif' %>
   <%= p.link 'Delete Book', :action => 'delete', :path => [ @book.id ], :icon => 'delete.gif' %>
+  <%= p.link 'RSS Import Book', :action => 'import',  :path => [ @book.id ], :icon => 'upload.gif' if @book.image_folder %> 
 <% end -%>
 
 <hr/>

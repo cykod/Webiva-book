@@ -352,6 +352,32 @@ class Book::ManageController < ModuleController
     render :partial => 'bulkview_table' if display
   end
   
+  def import
+    @book = BookBook.find params[:path][0]
+
+    unless @book.image_folder
+      flash[:notice] = 'Missing images folder'
+      redirect_to :action => 'book', :path => @book.id
+      return
+    end
+
+    @importer = BookImporter.new params[:import]
+    @importer.images = {}
+    @importer.book = @book
+
+    if request.post?
+      if params[:commit]
+        if @importer.valid? && @importer.import
+          redirect_to :action => 'edit', :path => @book.id
+        end
+      else
+        redirect_to :action => 'edit', :path => @book.id
+      end
+    end
+    
+    cms_page_path ['Content', [@book.name, url_for(:action => 'edit', :path => @book.id)]], 'RSS Import'
+  end
+
   protected
 
   def active_tree_move(pages)

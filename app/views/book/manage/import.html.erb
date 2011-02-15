@@ -1,0 +1,9 @@
+<div class="admin_content">
+
+<% admin_form_for :import, @importer do |f| -%>
+  <%= f.filemanager_file :file_id, :label => 'RSS File' %>
+  <%= f.spacer %>
+  <%= f.cancel_submit_buttons %>
+<% end -%>
+
+</div>
