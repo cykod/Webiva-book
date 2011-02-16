@@ -59,6 +59,8 @@ class Book::ManageController < ModuleController
   end
 
   def edit
+    return render(:nothing => true, :status => 404) if params[:path][0] == 'images'
+
     @book = BookBook.find(params[:path][0])
     @page = @book.book_pages.find_by_id(params[:path][1]) if params[:path][1]
 

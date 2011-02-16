@@ -93,7 +93,7 @@ class BookImporter < HashModel
       file = self.folder.add(src) if src =~ /^http/ && src.length < 200
       if file
         self.images[src] = file
-        "src=#{quote}#{file.editor_url}#{quote}"
+        "src=#{quote}images/#{file.name}#{quote}"
       else
         match
       end
