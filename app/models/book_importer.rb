@@ -1,11 +1,9 @@
 require 'nokogiri'
 
 class BookImporter < HashModel
-  attributes :xml => nil, :book => nil, :images => nil, :file_id => nil
+  attributes :xml => nil, :book => nil, :images => nil, :rss_file_id => nil, :url => nil, :csv_file_id => nil
   
-  domain_file_options :file_id
-  
-  validates_presence_of :file_id
+  domain_file_options :rss_file_id, :csv_file_id
   
   attr_accessor :host, :base_url
   
@@ -13,9 +11,18 @@ class BookImporter < HashModel
   include ActionView::Helpers::TextHelper
 
   def validate
-    if self.file
+    if self.rss_file
       self.import_file
       self.errors.add(:file_id, 'is not an RSS Feed') unless self.xml && self.xml.include?('<channel>')
+    elsif ! self.url.blank?
+      self.import_site
+      self.errors.add(:url, 'is not a valid RSS Feed') unless self.xml && self.xml.include?('<channel>')
+    elsif self.csv_file
+      self.errors.add(:csv_file_id, 'is not valid') unless self.csv_file.mime_type == 'text/csv'
+    else
+      self.errors.add(:csv_file_id, 'is missing')
+      self.errors.add(:rss_file_id, 'is missing')
+      self.errors.add(:url, 'is missing')
     end
   end
 
@@ -23,8 +30,16 @@ class BookImporter < HashModel
     self.book.image_folder
   end
 
+  def import_site
+    begin
+      self.xml = DomainFile.download(self.url).body.to_s
+    rescue
+      false
+    end
+  end
+
   def import_file
-    File.open(file.filename, 'r') { |f| self.xml = f.read }
+    File.open(self.rss_file.filename, 'r') { |f| self.xml = f.read }
   end
 
   def rss_header
@@ -89,7 +104,6 @@ class BookImporter < HashModel
     end
 
     body.strip!
-    body = simple_format(body) unless body.blank?
     body
   end
 

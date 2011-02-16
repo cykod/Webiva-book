@@ -30,15 +30,19 @@ function file_manager_insert_file_into_field_for_markdown(field, file_type, file
 
 <% more_action_panel do |p| -%>
   <%= p.link 'Configure Book',:action => 'book',:path => [ @book.id ], :icon => 'configure.gif' %> 
-  <%= p.link 'Bulk Edit Pages',:action => 'bulk_edit',:path => [ @book.id ], :icon => 'edit.gif' %> 
-  <%= p.link 'Import Book', :controller => 'page_import', :action => 'index',  :path => [ @book.id ], :icon => 'upload.gif' %> 
+  <%= p.link 'Bulk Edit Pages',:action => 'bulk_edit',:path => [ @book.id ], :icon => 'edit.gif' %>
+  <% if @book.image_folder -%>
+    <%= p.link 'Import Book', :action => 'import',  :path => [ @book.id ], :icon => 'upload.gif' %> 
+  <% else -%>
+    <%= p.link 'Import Book', :controller => 'page_import', :action => 'index',  :path => [ @book.id ], :icon => 'upload.gif' %>
+  <% end -%>
+
   <% p.custom do %>
     <a href="javascript:void(0);" id="export_book"><%= theme_image_tag('icons/actions/download.gif') %> Export Book</a>
     <span id="export_book_status"></span>
   <% end %>
   <%= p.link 'Submitted Edits',:action => 'edits',:path => [ @book.id ], :icon => 'show.gif' %>
   <%= p.link 'Delete Book', :action => 'delete', :path => [ @book.id ], :icon => 'delete.gif' %>
-  <%= p.link 'RSS Import Book', :action => 'import',  :path => [ @book.id ], :icon => 'upload.gif' if @book.image_folder %> 
 <% end -%>
 
 <hr/>

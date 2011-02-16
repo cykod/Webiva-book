@@ -367,15 +367,19 @@ class Book::ManageController < ModuleController
 
     if request.post?
       if params[:commit]
-        if @importer.valid? && @importer.import
-          redirect_to :action => 'edit', :path => @book.id
+        if @importer.valid?
+          if @importer.csv_file
+            redirect_to :controller => 'page_import', :action => 'confirm', :path => [@book.id, @importer.csv_file.id]
+          elsif @importer.import
+            redirect_to :action => 'edit', :path => @book.id
+          end
         end
       else
         redirect_to :action => 'edit', :path => @book.id
       end
     end
     
-    cms_page_path ['Content', [@book.name, url_for(:action => 'edit', :path => @book.id)]], 'RSS Import'
+    cms_page_path ['Content', [@book.name, url_for(:action => 'edit', :path => @book.id)]], 'Book Import'
   end
 
   protected
